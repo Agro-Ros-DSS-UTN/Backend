@@ -3,6 +3,8 @@ import express from 'express'
 import cors from 'cors'
 import { sequelize } from './src/models/index.js'
 import 'dotenv/config'
+import clientRoutes from './src/routes/client.route.js'
+import userRoutes from './src/routes/user.route.js'
 
 const port = process.env.PORT || 3000
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -11,6 +13,8 @@ const app = express()
 
 app.use(cors({ origin: frontendUrl, credentials: true }))
 app.use(express.json())
+app.use(clientRoutes)
+app.use(userRoutes) 
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
