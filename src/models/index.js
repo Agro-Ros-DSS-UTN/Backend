@@ -10,17 +10,13 @@ import Province from './province.model.js';
 import TypeProduct from './type_product.model.js';
 import ProductLine from './product_line.model.js';
 import CultivationType from './cultivation_type.model.js';
-<<<<<<< HEAD
-import lineaProd from './lineaProd.model.js';
-import FormularioActividad from './formularioActividad.model.js';
-import ArchivoAdjunto from './formularioActividad_archivoadjunto.model.js';
-import Service from './service.model.js';
-=======
 import Seller from './seller.model.js';
 import FormularioActividad from './formularioActividad.model.js';
 import Opportunity from './opportunity.model.js';
 import Objective from './objective.model.js';
->>>>>>> 618f70cc7d861831ff73b9f6145c4cb4657a20b8
+import service from './service.model.js';
+import ArchivoAdjunto from './archivoAdjuntoFA.model.js';
+import lineaProd from './lineaProd.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -124,6 +120,17 @@ Objective.belongsToMany(Opportunity, {
   otherKey: 'opportunityId'
 });
 
+// Relación FormularioActividad -> Servicio (1 a N)
+FormularioActividad.hasMany(Servicio, {
+    foreignKey: 'formularioActividadId',
+    onDelete: 'CASCADE', // Si eliminas el formulario, se borran en cascada sus servicios dependientes
+    onUpdate: 'CASCADE'
+});
+
+Servicio.belongsTo(FormularioActividad, {
+    foreignKey: 'formularioActividadId'
+});
+
 export {
   sequelize,
   Client,
@@ -136,15 +143,11 @@ export {
   TypeProduct,
   ProductLine,
   CultivationType,
-<<<<<<< HEAD
-  lineaProd,
-  Service,
-  FormularioActividad,
-  formularioActividad_archivoadjunto 
-=======
   Seller,
   FormularioActividad,
   Opportunity,
-  Objective
->>>>>>> 618f70cc7d861831ff73b9f6145c4cb4657a20b8
+  Objective,
+  service,
+  lineaProd,
+  ArchivoAdjunto
 };
