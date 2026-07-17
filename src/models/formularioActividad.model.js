@@ -6,7 +6,8 @@ const FormularioActividad = sequelize.define('FormularioActividad', {
   idFormulario: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    allowNull: false
   },
   tipoContacto: {
     type: DataTypes.STRING(100),
@@ -14,7 +15,7 @@ const FormularioActividad = sequelize.define('FormularioActividad', {
   },
   descripcion: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: true
   },
   montoVenta: {
     type: DataTypes.DECIMAL(10, 2), // Para representar el [0..1]

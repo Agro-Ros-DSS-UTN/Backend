@@ -12,7 +12,10 @@ import Province from './province.model.js';
 import TypeProduct from './type_product.model.js';
 import ProductLine from './product_line.model.js';
 import CultivationType from './cultivation_type.model.js';
-
+import lineaProd from './lineaProd.model.js';
+import FormularioActividad from './formularioActividad.model.js';
+import ArchivoAdjunto from './formularioActividad_archivoadjunto.model.js';
+import Service from './service.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -41,6 +44,18 @@ Locality.belongsTo(Province, { foreignKey: 'provinceId' });
 // Relación Localidad -> EmpresaCliente (1..1)
 Locality.hasMany(ClientCompany, { foreignKey: 'localityCodPostal', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientCompany.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
+
+//Relacion FormularioActividad atributo ArchivosAdjuntos
+FormularioActividad.hasMany(ArchivoAdjunto, {
+  foreignKey: 'formularioActividadId',
+  as: 'archivos' // Alias para cuando hagas consultas
+});
+
+// Un ArchivoAdjunto pertenece a un FormularioActividad
+ArchivoAdjunto.belongsTo(FormularioActividad, {
+  foreignKey: 'formularioActividadId'
+});
+
 
 // Relación EmpresaCliente <-> TipoProducto (muchos a muchos)
 ClientCompany.belongsToMany(TypeProduct, {
@@ -89,5 +104,9 @@ export {
   Province,
   TypeProduct,
   ProductLine,
-  CultivationType   
+  CultivationType,
+  lineaProd,
+  Service,
+  FormularioActividad,
+  formularioActividad_archivoadjunto 
 };
