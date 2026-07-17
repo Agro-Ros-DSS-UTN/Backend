@@ -1,4 +1,4 @@
-import Provider from '../models/service.model.js';
+import Service from '../models/service.model.js';
 
 // Cracion de un servicio 
 export const createService = async (req, res)=>{

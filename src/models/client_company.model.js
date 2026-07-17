@@ -8,20 +8,38 @@ const ClientCompany = sequelize.define('ClientCompany', {
     primaryKey: true,
     autoIncrement: true
   },
-  nombEmp: {
-    type: DataTypes.STRING(100),
-    allowNull: false
-  },
-  desc: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  ubicacion: {
+  nombreEmpresa: {
     type: DataTypes.STRING(150),
     allowNull: false
   },
-  estado: {
+  descEmpresa: {
+    type: DataTypes.TEXT,
+    allowNull: true // [0..1]
+  },
+  direccionEmpresa: {
+    type: DataTypes.STRING(150),
+    allowNull: false
+  },
+  fechaRegistro: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  cuit: {
     type: DataTypes.STRING(20),
+    allowNull: false,
+    unique: true
+  },
+  proveedorActual: {
+    type: DataTypes.STRING(150),
+    allowNull: true
+  },
+  superficieHa: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true // [0..N] -> ver nota abajo
+  },
+  tipoEmpresa: {
+    type: DataTypes.STRING(50),
     allowNull: false
   }
 }, {

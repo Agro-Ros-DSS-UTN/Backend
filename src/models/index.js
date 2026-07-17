@@ -2,9 +2,7 @@
 import sequelize from '../config/database.js';
 import Client from './client.model.js';
 import User from './user.model.js';
-import Provider from './provider.model.js';
 import ClientPhone from './client_phone.model.js';
-import ProviderPhone from './provider_phone.model.js';
 import UserPhone from './user_phone.model.js';
 import ClientCompany from './client_company.model.js';
 import Locality from './locality.model.js';
@@ -12,18 +10,21 @@ import Province from './province.model.js';
 import TypeProduct from './type_product.model.js';
 import ProductLine from './product_line.model.js';
 import CultivationType from './cultivation_type.model.js';
+<<<<<<< HEAD
 import lineaProd from './lineaProd.model.js';
 import FormularioActividad from './formularioActividad.model.js';
 import ArchivoAdjunto from './formularioActividad_archivoadjunto.model.js';
 import Service from './service.model.js';
+=======
+import Seller from './seller.model.js';
+import FormularioActividad from './formularioActividad.model.js';
+import Opportunity from './opportunity.model.js';
+import Objective from './objective.model.js';
+>>>>>>> 618f70cc7d861831ff73b9f6145c4cb4657a20b8
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientPhone.belongsTo(Client, { foreignKey: 'clientNumDoc' });
-
-// Relación Proveedor -> Telefonos (1..n)
-Provider.hasMany(ProviderPhone, { foreignKey: 'providerNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ProviderPhone.belongsTo(Provider, { foreignKey: 'providerNumDoc' });
 
 // Relación Usuario -> Telefonos (1..n)
 User.hasMany(UserPhone, { foreignKey: 'userNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -32,10 +33,6 @@ UserPhone.belongsTo(User, { foreignKey: 'userNumDoc' });
 // Relación Cliente -> EmpresaCliente (1..1)
 Client.hasOne(ClientCompany, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientCompany.belongsTo(Client, { foreignKey: 'clientNumDoc' });
-
-// Relación Proveedor -> EmpresaCliente (1..1)
-Provider.hasOne(ClientCompany, { foreignKey: 'providerNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ClientCompany.belongsTo(Provider, { foreignKey: 'providerNumDoc' });
 
 // Relación Provincia -> Localidad (1..n)
 Province.hasMany(Locality, { foreignKey: 'provinceId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -91,13 +88,47 @@ CultivationType.belongsToMany(ClientCompany, {
   otherKey: 'clientCompanyId'
 });
 
+// Usuario -> Vendedor (1..1)
+User.hasOne(Seller, { foreignKey: 'userNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Seller.belongsTo(User, { foreignKey: 'userNumDoc' });
+
+// Vendedor <-> Cliente (muchos a muchos, "clientesAvisitar")
+Seller.belongsToMany(Client, {
+  through: 'vendedor_cliente',
+  foreignKey: 'sellerId',
+  otherKey: 'clientNumDoc'
+});
+Client.belongsToMany(Seller, {
+  through: 'vendedor_cliente',
+  foreignKey: 'clientNumDoc',
+  otherKey: 'sellerId'
+});
+
+// Vendedor -> FormularioActividad (1..*)
+Seller.hasMany(FormularioActividad, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+FormularioActividad.belongsTo(Seller, { foreignKey: 'sellerId' });
+
+// EmpresaServicio -> Oportunidad (1..1 en EmpresaServicio, 0..* en Oportunidad)
+ClientCompany.hasMany(Opportunity, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Opportunity.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
+
+// Oportunidad <-> Objetivo (muchos a muchos)
+Opportunity.belongsToMany(Objective, {
+  through: 'oportunidad_objetivo',
+  foreignKey: 'opportunityId',
+  otherKey: 'objectiveId'
+});
+Objective.belongsToMany(Opportunity, {
+  through: 'oportunidad_objetivo',
+  foreignKey: 'objectiveId',
+  otherKey: 'opportunityId'
+});
+
 export {
   sequelize,
   Client,
   User,
-  Provider,
   ClientPhone,
-  ProviderPhone,
   UserPhone,
   ClientCompany,
   Locality,
@@ -105,8 +136,15 @@ export {
   TypeProduct,
   ProductLine,
   CultivationType,
+<<<<<<< HEAD
   lineaProd,
   Service,
   FormularioActividad,
   formularioActividad_archivoadjunto 
+=======
+  Seller,
+  FormularioActividad,
+  Opportunity,
+  Objective
+>>>>>>> 618f70cc7d861831ff73b9f6145c4cb4657a20b8
 };
