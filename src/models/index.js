@@ -18,6 +18,11 @@ import service from './service.model.js';
 import ArchivoAdjunto from './archivoAdjuntoFA.model.js';
 import lineaProd from './lineaProd.model.js';
 
+
+//relacion EmpresaCliente -> Localidad (1..n)
+ClientCompany.hasOne(Locality, { foreignKey: 'localityCodPostal', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Locality.belongsTo(ClientCompany, { foreignKey: 'localityCodPostal' });
+
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientPhone.belongsTo(Client, { foreignKey: 'clientNumDoc' });

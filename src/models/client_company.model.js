@@ -41,7 +41,16 @@ const ClientCompany = sequelize.define('ClientCompany', {
   tipoEmpresa: {
     type: DataTypes.STRING(50),
     allowNull: false
-  }
+  },
+  localityCodPostal: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Locality', // Nombre de la tabla Locality
+    }
+}
+
+
 }, {
   tableName: 'empresas_clientes',
   timestamps: false
