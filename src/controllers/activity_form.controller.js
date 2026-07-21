@@ -1,5 +1,5 @@
 /* eslint-disable */
-import Client from '../models/formularioActividad.model.js';
+import formularioActividad from '../models/activityForm.js';
 
 // Creacion de un formulario de actividad
 export const createFormularioActividad= async (req, res) => {
@@ -13,7 +13,7 @@ export const createFormularioActividad= async (req, res) => {
             }
         
 
-    const newClient = await Client.create({
+    const newClient = await formularioActividad.create({
         idFormulario,
         tipoContacto,
         descripcion,
@@ -39,11 +39,11 @@ return res.status(500).json({
 // Obtener todos los formularios de actividad
 export const getAllFormulariosActividad = async (req, res) => {
     try{
-        const clients = await Client.findAll();
+        const formularios = await formularioActividad.findAll();
 
         return res.status(200).json({
             message: "Formularios de actividad obtenidos exitosamente",
-            data:clients
+            data:formularios
         });
     }catch(error){
         console.error("Error al obtener los formularios de actividad:", error);
@@ -59,9 +59,9 @@ export const getAllFormulariosActividad = async (req, res) => {
 export const getFormularioActividadById = async (req, res)=> {
     try{
             const {idFormulario}= req.params;
-            const client= await Client.findByPk(idFormulario);
+            const FormularioActividad= await formularioActividad.findByPk(idFormulario);
 
-            if(!client){
+            if(!formularioActividad){
                 return res.status(404).json({
                     message:"Formulario de actividad no encontrado"
                 });
@@ -69,7 +69,7 @@ export const getFormularioActividadById = async (req, res)=> {
 
             return res.status(200).json({
                 message:"Formulario de actividad obtenido con exito",
-                data:client
+                data:formularioActividad
             });
 
 
@@ -89,15 +89,15 @@ export const updateFormularioActividadById = async (req, res) => {
         const {idFormulario}= req.params;
         const{tipoContacto, descripcion, montoVenta, fechaHora}= req.body;
 
-        const client= await Client.findByPk(idFormulario);
+        const formularioActividad= await formularioActividad.findByPk(idFormulario);
 
-        if(!client){
+        if(!formularioActividad){
             return res.status(404).json({
                 message:"Formulario de actividad no encontrado",
             });    
         }
 
-        await client.update({
+        await formularioActividad.update({
             tipoContacto,
             descripcion,
             montoVenta,
@@ -106,7 +106,7 @@ export const updateFormularioActividadById = async (req, res) => {
 
         return res.status(200).json({
             message:"Formulario de actividad actualizado exitosamente",
-            data: client
+            data: formularioActividad
         });
 
     }catch(error){
@@ -122,15 +122,15 @@ export const updateFormularioActividadById = async (req, res) => {
 export const deleteFormularioActividadById= async (req, res) => {
     try{
         const{idFormulario}= req.params;
-        const client= await Client.findByPk(idFormulario);
+        const formularioActividad= await formularioActividad.findByPk(idFormulario);
 
-        if(!client){
+        if(!formularioActividad){
             return res.status(404).json({
                 message:"Formulario de actividad no encontrado"
             });
         }
 
-        await client.destroy();
+        await formularioActividad.destroy();
 
         return res.status(200).json({
             message:"Formulario de actividad eliminado exitosamente"
