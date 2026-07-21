@@ -4,7 +4,7 @@ import sequelize from '../config/database.js';
 
 const Locality = sequelize.define('Locality', {
   codPostal: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(10),
     primaryKey: true,
     allowNull: false
   },

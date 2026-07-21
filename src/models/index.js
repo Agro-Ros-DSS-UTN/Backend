@@ -30,6 +30,11 @@ UserPhone.belongsTo(User, { foreignKey: 'userNumDoc' });
 Client.hasOne(ClientCompany, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientCompany.belongsTo(Client, { foreignKey: 'clientNumDoc' });
 
+
+// Relación Localidad -> Cliente (1..n): un cliente pertenece a una localidad
+Locality.hasMany(Client, { foreignKey: 'codigoPostal', sourceKey: 'codPostal', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
+Client.belongsTo(Locality, { foreignKey: 'codigoPostal', targetKey: 'codPostal' });
+
 // Relación Provincia -> Localidad (1..n)
 Province.hasMany(Locality, { foreignKey: 'provinceId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Locality.belongsTo(Province, { foreignKey: 'provinceId' });
@@ -121,15 +126,20 @@ Objective.belongsToMany(Opportunity, {
 });
 
 // Relación FormularioActividad -> Servicio (1 a N)
-FormularioActividad.hasMany(Servicio, {
+FormularioActividad.hasMany(service, {
     foreignKey: 'formularioActividadId',
-    onDelete: 'CASCADE', // Si eliminas el formulario, se borran en cascada sus servicios dependientes
+    onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
 
-Servicio.belongsTo(FormularioActividad, {
+service.belongsTo(FormularioActividad, {
     foreignKey: 'formularioActividadId'
 });
+
+service.belongsTo(FormularioActividad, {
+    foreignKey: 'formularioActividadId'
+});
+
 
 export {
   sequelize,

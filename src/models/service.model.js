@@ -21,8 +21,8 @@ const Servicio = sequelize.define('Servicio', {
         type: DataTypes.INTEGER,
         allowNull: false, // NO puede ser nulo, garantizando que sea entidad débil
         references: {
-            model: 'FormularioActividad', // Debe coincidir con el nombre de la tabla de formularios
-            key: 'idFormulario'           // Debe coincidir con la clave primaria de ese modelo
+            model: 'formularios_actividad',
+            key: 'id_formulario'
         }
     }
 }, {

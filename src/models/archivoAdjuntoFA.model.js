@@ -16,4 +16,4 @@ const formularioActividad_archivoadjunto = sequelize.define('ArchivoAdjunto', {
   timestamps: false
 });
 
-export default ArchivoAdjunto;
+export default formularioActividad_archivoadjunto;
