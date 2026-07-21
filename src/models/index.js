@@ -11,7 +11,7 @@ import TypeProduct from './type_product.model.js';
 import ProductLine from './product_line.model.js';
 import CultivationType from './cultivation_type.model.js';
 import Seller from './seller.model.js';
-import FormularioActividad from './formularioActividad.model.js';
+import FormularioActividad from './activityForm.js';
 import Opportunity from './opportunity.model.js';
 import Objective from './objective.model.js';
 import service from './service.model.js';
