@@ -15,7 +15,7 @@ import FormularioActividad from './activityForm.js';
 import Opportunity from './opportunity.model.js';
 import Objective from './objective.model.js';
 import service from './service.model.js';
-import ArchivoAdjunto from './archivoAdjuntoFA.model.js';
+import ArchivoAdjunto from './attachmentFA.model.js';
 import lineaProd from './lineaProd.model.js';
 
 

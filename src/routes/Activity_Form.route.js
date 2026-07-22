@@ -4,9 +4,9 @@ import {
     createFormularioActividad,
     getAllFormulariosActividad,
     getFormularioActividadById,
-    updateFormularioActividad,
-    deleteFormularioActividad
-} from '../controllers/formularioActividad.controller.js';
+    updateFormularioActividadById,
+    deleteFormularioActividadById
+} from '../controllers/activity_form.controller.js';
 
 const router = Router();
 
@@ -17,8 +17,8 @@ router.get('/formularios-actividad', getAllFormulariosActividad);
 
 router.get('/formularios-actividad/:id', getFormularioActividadById);
 
-router.put('/formularios-actividad/:id', updateFormularioActividad);
+router.put('/formularios-actividad/:id', updateFormularioActividadById);
 
-router.delete('/formularios-actividad/:id', deleteFormularioActividad);
+router.delete('/formularios-actividad/:id', deleteFormularioActividadById);
 
 export default router;

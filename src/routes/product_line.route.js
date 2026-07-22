@@ -1,24 +1,24 @@
 /* eslint-disable */
 import { Router } from 'express';
 import { 
-    createlineaProd,
-    getAlllineaProds,
-    getlineaProdById,
-    updatelineaProd,
-    deletelineaProd
-} from '../controllers/lineaProd.controller.js';
+    createLineaProd,
+    getAllLineasProd,
+    getLineaProdById,
+    updateLineaProdById,
+    deleteLineaProdById
+} from '../controllers/product_line.controller.js';
 
 const router = Router();
 
 // Cuando hagan un POST a /lineaProds, se ejecutará tu controlador
-router.post('/lineaProds', createlineaProd);
+router.post('/lineaProds', createLineaProd);
 
-router.get('/lineaProds', getAlllineaProds);
+router.get('/lineaProds', getAllLineasProd);
 
-router.get('/lineaProds/:codLinea', getlineaProdById);
+router.get('/lineaProds/:codLinea', getLineaProdById);
 
-router.put('/lineaProds/:codLinea', updatelineaProd);
+router.put('/lineaProds/:codLinea', updateLineaProdById);
 
-router.delete('/lineaProds/:codLinea', deletelineaProd);
+router.delete('/lineaProds/:codLinea', deleteLineaProdById);
 
 export default router;

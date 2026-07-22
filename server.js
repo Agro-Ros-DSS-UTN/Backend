@@ -6,9 +6,9 @@ import 'dotenv/config'
 import clientRoutes from './src/routes/client.route.js'
 import userRoutes from './src/routes/user.route.js'
 import localityRoutes from './src/routes/locality.route.js'
-import lineaProdRoutes from './src/routes/lineaProd.route.js'
+import lineaProdRoutes from './src/routes/product_line.route.js'
 import serviceRoutes from './src/routes/service.route.js'
-import formularioActividadRoutes from './src/routes/formularioActividad.route.js'
+import formularioActividadRoutes from './src/routes/Activity_Form.route.js'
 import clientCompanyRoutes from './src/routes/client_company.route.js'
 
 const port = process.env.PORT || 3000

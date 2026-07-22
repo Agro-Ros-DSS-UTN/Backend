@@ -43,11 +43,11 @@ const ClientCompany = sequelize.define('ClientCompany', {
     allowNull: false
   },
   localityCodPostal: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'Locality', // Nombre de la tabla Locality
-    }
+  type: DataTypes.STRING(10),
+  allowNull: false,
+  references: {
+    model: 'localidades',
+  }
 }
 
 
