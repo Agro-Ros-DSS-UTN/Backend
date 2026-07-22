@@ -13,6 +13,7 @@ const archivoAdjuntoFA = sequelize.define('ArchivoAdjunto', {
     },
     
     formularioActividadId: {
+<<<<<<< HEAD
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
@@ -20,6 +21,15 @@ const archivoAdjuntoFA = sequelize.define('ArchivoAdjunto', {
         key: 'id_formulario'
     }
 }
+=======
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'formularios_actividad',
+            key: 'idFormulario'
+        }
+    }
+>>>>>>> a5eda5031eb10e2d9e70b5acbdc2a3282ec2364d
 }, {
     tableName: 'archivos_adjuntos',
     timestamps: false
