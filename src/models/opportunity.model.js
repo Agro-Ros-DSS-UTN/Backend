@@ -31,6 +31,10 @@ const Opportunity = sequelize.define('Opportunity', {
   fechaUltimaActualizacion: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  sellerId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 }, {
   tableName: 'oportunidades',

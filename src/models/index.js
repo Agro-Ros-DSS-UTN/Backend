@@ -118,6 +118,10 @@ FormularioActividad.belongsTo(Seller, { foreignKey: 'sellerId' });
 ClientCompany.hasMany(Opportunity, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Opportunity.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
 
+// Relación Vendedor -> Oportunidad (1..*)
+Seller.hasMany(Opportunity, { foreignKey: 'sellerId', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
+Opportunity.belongsTo(Seller, { foreignKey: 'sellerId' });
+
 // Oportunidad <-> Objetivo (muchos a muchos)
 Opportunity.belongsToMany(Objective, {
   through: 'oportunidad_objetivo',
