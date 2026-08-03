@@ -10,6 +10,7 @@ import lineaProdRoutes from './src/routes/product_line.route.js'
 import serviceRoutes from './src/routes/service.route.js'
 import formularioActividadRoutes from './src/routes/Activity_Form.route.js'
 import clientCompanyRoutes from './src/routes/client_company.route.js'
+import opportunityRoutes from './src/routes/opportunity.route.js'
 
 const port = process.env.PORT || 3000
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -25,6 +26,7 @@ app.use(lineaProdRoutes)
 app.use(serviceRoutes)
 app.use(formularioActividadRoutes)
 app.use(clientCompanyRoutes)
+app.use(opportunityRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
