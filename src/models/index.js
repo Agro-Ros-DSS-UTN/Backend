@@ -11,12 +11,12 @@ import TypeProduct from './type_product.model.js';
 import ProductLine from './product_line.model.js';
 import CultivationType from './cultivation_type.model.js';
 import Seller from './seller.model.js';
-import FormularioActividad from './activityForm.js';
+import activityForm from './activityForm.js';
 import Opportunity from './opportunity.model.js';
 import Objective from './objective.model.js';
 import service from './service.model.js';
-import ArchivoAdjunto from './attachmentFA.model.js';
-import lineaProd from './lineaProd.model.js';
+import attachmentFA from './attachmentFA.model.js';
+import ProductLine from './Product_line.model.js';
 
 
 //relacion EmpresaCliente -> Localidad (1..n)
@@ -135,19 +135,17 @@ Objective.belongsToMany(Opportunity, {
 });
 
 // Relación FormularioActividad -> Servicio (1 a N)
-FormularioActividad.hasMany(service, {
+activityForm.hasMany(service, {
     foreignKey: 'formularioActividadId',
-    onDelete: 'CASCADE',
+    onDelete: 'CASCADE', 
     onUpdate: 'CASCADE'
 });
 
-service.belongsTo(FormularioActividad, {
+service.belongsTo(activityForm, {
     foreignKey: 'formularioActividadId'
 });
 
-service.belongsTo(FormularioActividad, {
-    foreignKey: 'formularioActividadId'
-});
+
 
 
 export {
@@ -163,10 +161,9 @@ export {
   ProductLine,
   CultivationType,
   Seller,
-  FormularioActividad,
+  activityForm,
   Opportunity,
   Objective,
   service,
-  lineaProd,
-  ArchivoAdjunto
+  attachmentFA
 };
