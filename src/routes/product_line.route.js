@@ -15,10 +15,10 @@ router.post('/lineaProds', createLineaProd);
 
 router.get('/lineaProds', getAllLineasProd);
 
-router.get('/lineaProds/:codLinea', getLineaProdById);
+router.get('/lineaProds/:id', getLineaProdById);
 
-router.put('/lineaProds/:codLinea', updateLineaProdById);
+router.put('/lineaProds/:id', updateLineaProdById);
 
-router.delete('/lineaProds/:codLinea', deleteLineaProdById);
+router.delete('/lineaProds/:id', deleteLineaProdById);
 
 export default router;

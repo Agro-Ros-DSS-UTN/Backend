@@ -16,7 +16,6 @@ import Opportunity from './opportunity.model.js';
 import Objective from './objective.model.js';
 import service from './service.model.js';
 import attachmentFA from './attachmentFA.model.js';
-import ProductLine from './Product_line.model.js';
 
 
 //relacion EmpresaCliente -> Localidad (1..n)
@@ -49,13 +48,13 @@ Locality.hasMany(ClientCompany, { foreignKey: 'localityCodPostal', onDelete: 'CA
 ClientCompany.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
 
 //Relacion FormularioActividad atributo ArchivosAdjuntos
-FormularioActividad.hasMany(ArchivoAdjunto, {
+activityForm.hasMany(attachmentFA, {
   foreignKey: 'formularioActividadId',
   as: 'archivos' // Alias para cuando hagas consultas
 });
 
 // Un ArchivoAdjunto pertenece a un FormularioActividad
-ArchivoAdjunto.belongsTo(FormularioActividad, {
+attachmentFA.belongsTo(activityForm, {
   foreignKey: 'formularioActividadId'
 });
 
@@ -111,8 +110,8 @@ Client.belongsToMany(Seller, {
 });
 
 // Vendedor -> FormularioActividad (1..*)
-Seller.hasMany(FormularioActividad, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-FormularioActividad.belongsTo(Seller, { foreignKey: 'sellerId' });
+Seller.hasMany(activityForm, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+activityForm.belongsTo(Seller, { foreignKey: 'sellerId' });
 
 // EmpresaServicio -> Oportunidad (1..1 en EmpresaServicio, 0..* en Oportunidad)
 ClientCompany.hasMany(Opportunity, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
