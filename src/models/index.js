@@ -16,11 +16,10 @@ import Opportunity from './opportunity.model.js';
 import Objective from './objective.model.js';
 import service from './service.model.js';
 import attachmentFA from './attachmentFA.model.js';
+import Promotion from './promotion.js';
 
 
-//relacion EmpresaCliente -> Localidad (1..n)
-ClientCompany.hasOne(Locality, { foreignKey: 'localityCodPostal', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Locality.belongsTo(ClientCompany, { foreignKey: 'localityCodPostal' });
+
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -46,6 +45,32 @@ Locality.belongsTo(Province, { foreignKey: 'provinceId' });
 // Relación Localidad -> EmpresaCliente (1..1)
 Locality.hasMany(ClientCompany, { foreignKey: 'localityCodPostal', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientCompany.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
+
+// Relación Promoción <-> LineaProd (muchos a muchos)
+Promotion.belongsToMany(ProductLine, {
+  through: 'promocion_linea_producto',
+  foreignKey: 'promotionId',
+  otherKey: 'productLineId'
+});
+ProductLine.belongsToMany(Promotion, {
+  through: 'promocion_linea_producto',
+  foreignKey: 'productLineId',
+  otherKey: 'promotionId'
+});
+
+// Relación Objetivo <-> Promoción (muchos a muchos)
+Objective.belongsToMany(Promotion, {
+  through: 'objetivo_promocion',
+  foreignKey: 'objectiveId',
+  otherKey: 'promotionId'
+});
+Promotion.belongsToMany(Objective, {
+  through: 'objetivo_promocion',
+  foreignKey: 'promotionId',
+  otherKey: 'objectiveId'
+});
+
+
 
 //Relacion FormularioActividad atributo ArchivosAdjuntos
 activityForm.hasMany(attachmentFA, {
@@ -168,5 +193,6 @@ export {
   Opportunity,
   Objective,
   service,
-  attachmentFA
+  attachmentFA,
+  Promotion
 };
