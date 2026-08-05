@@ -133,6 +133,10 @@ Objective.belongsToMany(Opportunity, {
   otherKey: 'opportunityId'
 });
 
+// Relación Oportunidad -> FormularioActividad (1..*)
+Opportunity.hasMany(activityForm, { foreignKey: 'opportunityId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+activityForm.belongsTo(Opportunity, { foreignKey: 'opportunityId' });
+
 // Relación FormularioActividad -> Servicio (1 a N)
 activityForm.hasMany(service, {
     foreignKey: 'formularioActividadId',

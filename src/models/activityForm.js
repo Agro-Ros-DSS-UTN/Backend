@@ -24,6 +24,10 @@ const FormularioActividad = sequelize.define('FormularioActividad', {
   fechaHora: {
     type: DataTypes.DATE,
     allowNull: false
+  },
+  opportunityId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 }, {
   tableName: 'formularios_actividad',

@@ -4,26 +4,26 @@ import formularioActividad from '../models/activityForm.js';
 // Creacion de un formulario de actividad
 export const createFormularioActividad= async (req, res) => {
     try{
-        const{idFormulario,tipoContacto,descripcion,montoVenta,fechaHora} = req.body;
+        const { tipoContacto, descripcion, montoVenta, fechaHora, opportunityId } = req.body;
 
-        if(!idFormulario || !tipoContacto || !fechaHora){
+        if (!tipoContacto || !fechaHora || !opportunityId) {
             return res.status(400).json({
-                message: "El ID del formulario de actividad, tipo de contacto y fecha/hora son obligatorios"
+                message: "El tipo de contacto, fecha/hora y opportunityId son obligatorios"
             });
-            }
+        }
         
 
-    const newClient = await formularioActividad.create({
-        idFormulario,
+    const nuevaActividad = await formularioActividad.create({
         tipoContacto,
         descripcion,
         montoVenta,
-        fechaHora 
+        fechaHora,
+        opportunityId
     });
 
     return res.status(201).json({
         message: "Formulario de actividad creado exitosamente",
-        data: newClient
+        data: nuevaActividad
     });
 
 }catch(error){
@@ -59,9 +59,9 @@ export const getAllFormulariosActividad = async (req, res) => {
 export const getFormularioActividadById = async (req, res)=> {
     try{
             const {idFormulario}= req.params;
-            const FormularioActividad= await formularioActividad.findByPk(idFormulario);
+            const actividad = await formularioActividad.findByPk(idFormulario);
 
-            if(!formularioActividad){
+            if(!actividad){
                 return res.status(404).json({
                     message:"Formulario de actividad no encontrado"
                 });
@@ -69,7 +69,7 @@ export const getFormularioActividadById = async (req, res)=> {
 
             return res.status(200).json({
                 message:"Formulario de actividad obtenido con exito",
-                data:formularioActividad
+                data: actividad
             });
 
 
@@ -87,26 +87,27 @@ export const getFormularioActividadById = async (req, res)=> {
 export const updateFormularioActividadById = async (req, res) => {
     try{
         const {idFormulario}= req.params;
-        const{tipoContacto, descripcion, montoVenta, fechaHora}= req.body;
+        const{tipoContacto, descripcion, montoVenta, fechaHora, opportunityId}= req.body;
 
-        const formularioActividad= await formularioActividad.findByPk(idFormulario);
+        const actividad = await formularioActividad.findByPk(idFormulario);
 
-        if(!formularioActividad){
+        if(!actividad){
             return res.status(404).json({
                 message:"Formulario de actividad no encontrado",
             });    
         }
 
-        await formularioActividad.update({
+        await actividad.update({
             tipoContacto,
             descripcion,
             montoVenta,
-            fechaHora
+            fechaHora,
+            opportunityId
         });
 
         return res.status(200).json({
             message:"Formulario de actividad actualizado exitosamente",
-            data: formularioActividad
+            data: actividad
         });
 
     }catch(error){
@@ -122,15 +123,15 @@ export const updateFormularioActividadById = async (req, res) => {
 export const deleteFormularioActividadById= async (req, res) => {
     try{
         const{idFormulario}= req.params;
-        const formularioActividad= await formularioActividad.findByPk(idFormulario);
+        const actividad = await formularioActividad.findByPk(idFormulario);
 
-        if(!formularioActividad){
+        if(!actividad){
             return res.status(404).json({
                 message:"Formulario de actividad no encontrado"
             });
         }
 
-        await formularioActividad.destroy();
+        await actividad.destroy();
 
         return res.status(200).json({
             message:"Formulario de actividad eliminado exitosamente"

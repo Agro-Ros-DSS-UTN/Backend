@@ -4,6 +4,7 @@ import ClientCompany from '../models/client_company.model.js';
 import Objective from '../models/objective.model.js';
 import Seller from '../models/seller.model.js';
 import User from '../models/user.model.js';
+import activityForm from '../models/activityForm.js';
 
 // Creación de una Oportunidad
 export const createOpportunity = async (req, res) => {
@@ -122,7 +123,8 @@ export const getOpportunityById = async (req, res) => {
                 { 
                     model: Seller,
                     include: [{ model: User }]
-                }
+                },
+                { model: activityForm }
             ]
         });
 
