@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { ProductLine } from '../models/index.js';
 
 // Creacion de una linea de producto

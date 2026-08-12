@@ -3,7 +3,7 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
 const User = sequelize.define('User', {
-  numDoc: {
+  idUser: {
     type: DataTypes.STRING(20),
     primaryKey: true,
     allowNull: false
@@ -15,17 +15,23 @@ const User = sequelize.define('User', {
   direccionMail: {
     type: DataTypes.STRING(150),
     allowNull: true
+
   },
-  antiguedad: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  direccion: {
-    type: DataTypes.STRING(150),
-    allowNull: false
-  }
-}, {
+  password: {
+  type: DataTypes.STRING(255),
+  allowNull: false
+},
+accountStatement : {
+  type: DataTypes.STRING(50),
+  allowNull: false,
+
+},
+role: {
+  type: DataTypes.STRING(50),
+  allowNull: false,
+}
+}, 
+{
   tableName: 'usuarios',
   timestamps: false
 });

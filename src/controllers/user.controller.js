@@ -1,149 +1,189 @@
 /* eslint-disable */
 import User from '../models/user.model.js';
 
-// Creacion de un usuario
-export const createUser= async(req, res) => {
-    try{
-        const{numDoc, nombreApellido, direccionMail, antiguedad, direccion} = req.body;
+// 1. Creación de un usuario
+export const createUser = async (req, res) => {
+  try {
+    const { idUser, nombreApellido, direccionMail, password, accountStatement, role } = req.body;
 
-        if(!numDoc || !nombreApellido || !direccion || !antiguedad){
-            return res.status(400).json({
-                message: "El numero de documento, nombre y apellido, direccion y antiguedad son obligatorios"
-            });
-        }
+    // Validar campos obligatorios según el modelo
+    if (!idUser || !nombreApellido || !password || !accountStatement || !role) {
+      return res.status(400).json({
+        message: 'El ID, nombre y apellido, contraseña, estado de cuenta y rol son obligatorios'
+      });
+    }
 
-        const newUser= await User.create({
-            numDoc,
-            nombreApellido,
-            direccionMail,
-            antiguedad,
-            direccion
-        });
+    const newUser = await User.create({
+      idUser,
+      nombreApellido,
+      direccionMail,
+      password,
+      accountStatement,
+      role
+    });
 
-        return res.status(201).json({
-            message:"Usuario creado exitosamente",
-            data: newUser
-        });
+    return res.status(201).json({
+      message: 'Usuario creado exitosamente',
+      data: newUser
+    });
 
-    }catch(error){
-        console.error("Error al crear el usuario:", error);
-        return res.status(500).json({
-            message:"Hubo un error interno en el servidor",
-            error: error.message
-        });
-        }};
+  } catch (error) {
+    console.error('Error al crear el usuario:', error);
+    return res.status(500).json({
+      message: 'Hubo un error interno en el servidor',
+      error: error.message
+    });
+  }
+};
 
 
-
-// Obtener todos los usuarios
+// 2. Obtener todos los usuarios
 export const getAllUsers = async (req, res) => {
-    try{
-        const users = await User.findAll();
+  try {
+    const users = await User.findAll();
 
-        return res.status(200).json({
-            message: "Usuarios obtenidos exitosamente",
-            data: users
-        });
-    }catch(error){
-        console.error("Error al obtener los usuarios:", error);
-        return res.status(500).json({
-            message: "Hubo un error interno en el servidor",
-            error: error.message
-        });
-    }};
-
-
-// Obtener un usuario por su numero de documento
-
-export const getUserById = async (req, res)=> {
-    try{
-            const {numDoc}= req.params;
-            const user= await User.findByPk(numDoc);
-
-            if(!user){
-                return res.status(404).json({
-                    message:"Usuario no encontrado"
-                });
-            }
-
-            return res.status(200).json({
-                message:"Usuario obtenido con exito",
-                data:user
-            });
+    return res.status(200).json({
+      message: 'Usuarios obtenidos exitosamente',
+      data: users
+    });
+  } catch (error) {
+    console.error('Error al obtener los usuarios:', error);
+    return res.status(500).json({
+      message: 'Hubo un error interno en el servidor',
+      error: error.message
+    });
+  }
+};
 
 
-    }catch(error){
-            console.error("Error al obtener el usuario", error);
-            return res.status(500).json({
-                message:"Hubo un error interno en el servidor",
-                error: error.message
-            });
-    }};
+// 3. Obtener un usuario por su idUser
+export const getUserById = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const user = await User.findByPk(idUser);
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Usuario obtenido con éxito',
+      data: user
+    });
+
+  } catch (error) {
+    console.error('Error al obtener el usuario:', error);
+    return res.status(500).json({
+      message: 'Hubo un error interno en el servidor',
+      error: error.message
+    });
+  }
+};
 
 
-    // Actualizar un usuario por su numero de documento
-
+// 4. Actualizar un usuario por su idUser
 export const updateUserById = async (req, res) => {
-    try{
-        const {numDoc}= req.params;
-        const{nombreApellido, direccionMail, tipoClient, codigoPostal, nota}= req.body;
+  try {
+    const { idUser } = req.params;
+    const { nombreApellido, direccionMail, password, accountStatement, role } = req.body;
 
-        const user= await User.findByPk(numDoc);
+    const user = await User.findByPk(idUser);
 
-        if(!user){
-            return res.status(404).json({
-                message:"Usuario no encontrado",
-            });    
-        }
+    if (!user) {
+      return res.status(404).json({
+        message: 'Usuario no encontrado'
+      });
+    }
 
-        await user.update({
-            nombreApellido,
-            direccionMail,
-            tipoClient,
-            codigoPostal,
-            nota
-        });
+    await user.update({
+      nombreApellido,
+      direccionMail,
+      password,
+      accountStatement,
+      role
+    });
 
-        return res.status(200).json({
-            message:"Usuario actualizado exitosamente",
-            data: user
-        });
+    return res.status(200).json({
+      message: 'Usuario actualizado exitosamente',
+      data: user
+    });
 
-    }catch(error){
-        console.error("Error al actualizar el usuario:", error);
-        return res.status(500).json({
-            message:"Hubo un error interno en el servidor",
-            error: error.message
-        });
-    }};
-
-
-// Eliminar un usuario por su numero de documento
-export const deleteUserById= async (req, res) => {
-    try{
-        const{numDoc}= req.params;
-        const user= await User.findByPk(numDoc);
-
-        if(!user){
-            return res.status(404).json({
-                message:"Usuario no encontrado"
-            });
-        }
-
-        await user.destroy();
-
-        return res.status(200).json({
-            message:"Usuario eliminado exitosamente"
-
-        });
+  } catch (error) {
+    console.error('Error al actualizar el usuario:', error);
+    return res.status(500).json({
+      message: 'Hubo un error interno en el servidor',
+      error: error.message
+    });
+  }
+};
 
 
-    }catch(error){
-        console.error("Error al eliminar el usuario:", error);
-        return res.status(500).json({
-            messge:"Hubo un error interno en el servidor",
-            error: error.message    
-        })
-    }};
+// 5. Eliminar un usuario por su idUser
+export const deleteUserById = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const user = await User.findByPk(idUser);
 
-    
+    if (!user) {
+      return res.status(404).json({
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    await user.destroy();
+
+    return res.status(200).json({
+      message: 'Usuario eliminado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar el usuario:', error);
+    return res.status(500).json({
+      message: 'Hubo un error interno en el servidor',
+      error: error.message
+    });
+  }
+};
+
+
+// 6. Login de usuario por ID y contraseña
+export const loginUser = async (req, res) => {
+  try {
+    // Permite recibir idUser o id por compatibilidad desde el body
+    const { idUser, id, password } = req.body;
+    const userIdToSearch = idUser || id;
+
+    if (!userIdToSearch || !password) {
+      return res.status(400).json({ message: 'El ID y la contraseña son obligatorios' });
+    }
+
+    // Busca por la PK actual (idUser)
+    const user = await User.findByPk(userIdToSearch);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (user.password !== password) {
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    }
+
+    return res.json({
+      message: 'Inicio de sesión exitoso',
+      user: {
+        id: user.idUser,
+        idUser: user.idUser,
+        nombreApellido: user.nombreApellido,
+        direccionMail: user.direccionMail,
+        accountStatement: user.accountStatement,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en loginUser:', error);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};

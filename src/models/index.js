@@ -26,8 +26,8 @@ Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', o
 ClientPhone.belongsTo(Client, { foreignKey: 'clientNumDoc' });
 
 // Relación Usuario -> Telefonos (1..n)
-User.hasMany(UserPhone, { foreignKey: 'userNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-UserPhone.belongsTo(User, { foreignKey: 'userNumDoc' });
+User.hasMany(UserPhone, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+UserPhone.belongsTo(User, { foreignKey: 'idUser' });
 
 // Relación Cliente -> EmpresaCliente (1..1)
 Client.hasOne(ClientCompany, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -119,8 +119,8 @@ CultivationType.belongsToMany(ClientCompany, {
 });
 
 // Usuario -> Vendedor (1..1)
-User.hasOne(Seller, { foreignKey: 'userNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Seller.belongsTo(User, { foreignKey: 'userNumDoc' });
+User.hasOne(Seller, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Seller.belongsTo(User, { foreignKey: 'idUser' });
 
 // Vendedor <-> Cliente (muchos a muchos, "clientesAvisitar")
 Seller.belongsToMany(Client, {
