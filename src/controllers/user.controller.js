@@ -14,11 +14,14 @@ export const createUser = async (req, res) => {
       });
     }
 
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const newUser = await User.create({
       idUser,
       nombreApellido,
       direccionMail,
-      password,
+      password: hashedPassword,
       accountStatement,
       role
     });
@@ -98,13 +101,18 @@ export const updateUserById = async (req, res) => {
       });
     }
 
-    await user.update({
+    const updateData = {
       nombreApellido,
       direccionMail,
-      password,
       accountStatement,
       role
-    });
+    };
+
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    await user.update(updateData);
 
     return res.status(200).json({
       message: 'Usuario actualizado exitosamente',
@@ -167,7 +175,8 @@ export const loginUser = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    if (user.password !== password) {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
