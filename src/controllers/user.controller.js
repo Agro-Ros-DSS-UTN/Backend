@@ -1,5 +1,6 @@
 /* eslint-disable */
 import User from '../models/user.model.js';
+import bcrypt from 'bcrypt';
 
 // 1. Creación de un usuario
 export const createUser = async (req, res) => {
