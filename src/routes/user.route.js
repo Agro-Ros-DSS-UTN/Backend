@@ -8,40 +8,27 @@ import {
     deleteUserById,
     loginUser
 } from '../controllers/user.controller.js';
-<<<<<<< HEAD
-=======
 import {
     validateCreateUser,
     validateUpdateUser,
     validateLogin
 } from '../middlewares/validateUser.middleware.js';
->>>>>>> 6b47ab9 (Creacion del middleware)
+import { verifyToken } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// Cuando hagan un POST a /users, se ejecutará tu controlador
-<<<<<<< HEAD
-router.post('/users', createUser);
-=======
-router.post('/users', validateCreateUser, createUser);
->>>>>>> 6b47ab9 (Creacion del middleware)
-
-router.get('/users', getAllUsers);
-
-router.get('/users/:idUser', getUserById);
-
-<<<<<<< HEAD
-router.put('/users/:idUser', updateUserById);
-
-router.delete('/users/:idUser', deleteUserById);
-
-router.post('/users/login', loginUser);
-=======
-router.put('/users/:idUser', validateUpdateUser, updateUserById);
-
-router.delete('/users/:idUser', deleteUserById);
-
+// Login: ruta pública, es la única forma de conseguir un token
 router.post('/users/login', validateLogin, loginUser);
->>>>>>> 6b47ab9 (Creacion del middleware)
+
+// A partir de acá, todas las rutas exigen un token válido
+router.post('/users', verifyToken, validateCreateUser, createUser);
+
+router.get('/users', verifyToken, getAllUsers);
+
+router.get('/users/:idUser', verifyToken, getUserById);
+
+router.put('/users/:idUser', verifyToken, validateUpdateUser, updateUserById);
+
+router.delete('/users/:idUser', verifyToken, deleteUserById);
 
 export default router;

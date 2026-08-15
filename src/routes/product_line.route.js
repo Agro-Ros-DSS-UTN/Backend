@@ -7,19 +7,15 @@ import {
     updateLineaProdById,
     deleteLineaProdById
 } from '../controllers/product_line.controller.js';
-<<<<<<< HEAD
-=======
 import { validateCreateProductLine } from '../middlewares/validateProductLine.middleware.js';
->>>>>>> 6b47ab9 (Creacion del middleware)
+import { verifyToken } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
+router.use('/lineaProds', verifyToken);
+
 // Cuando hagan un POST a /lineaProds, se ejecutará tu controlador
-<<<<<<< HEAD
-router.post('/lineaProds', createLineaProd);
-=======
 router.post('/lineaProds', validateCreateProductLine, createLineaProd);
->>>>>>> 6b47ab9 (Creacion del middleware)
 
 router.get('/lineaProds', getAllLineasProd);
 

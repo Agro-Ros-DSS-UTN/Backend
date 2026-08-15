@@ -11,6 +11,7 @@ import serviceRoutes from './src/routes/service.route.js'
 import formularioActividadRoutes from './src/routes/Activity_Form.route.js'
 import clientCompanyRoutes from './src/routes/client_company.route.js'
 import opportunityRoutes from './src/routes/opportunity.route.js'
+import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
 
 const port = process.env.PORT || 3000
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -25,12 +26,19 @@ app.use(localityRoutes)
 app.use(lineaProdRoutes)
 app.use(serviceRoutes)
 app.use(formularioActividadRoutes)
-app.use(clientCompanyRoutes)
+app.use('/clientCompany', clientCompanyRoutes)
 app.use(opportunityRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
+
+// IMPORTANTE: estos dos van al final, después de todas las rutas.
+// notFoundHandler atrapa rutas inexistentes (404) y errorHandler atrapa
+// cualquier error que llegue por next(error) o por un controller envuelto
+// en asyncHandler que haya rechazado su promesa.
+app.use(notFoundHandler)
+app.use(errorHandler)
 
 async function startServer() {
   try {

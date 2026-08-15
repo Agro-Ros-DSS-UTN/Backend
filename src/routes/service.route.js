@@ -7,19 +7,15 @@ import {
     updateServiceById,
     deleteServiceById
 } from '../controllers/service.controller.js';
-<<<<<<< HEAD
-=======
 import { validateCreateService } from '../middlewares/validateService.middleware.js';
->>>>>>> 6b47ab9 (Creacion del middleware)
+import { verifyToken } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
+router.use('/servicios', verifyToken);
+
 // Cuando hagan un POST a /servicios, se ejecutará tu controlador
-<<<<<<< HEAD
-router.post('/servicios', createService);
-=======
 router.post('/servicios', validateCreateService, createService);
->>>>>>> 6b47ab9 (Creacion del middleware)
 
 router.get('/servicios', getAllServices);
 

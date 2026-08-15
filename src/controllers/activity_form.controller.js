@@ -1,19 +1,5 @@
 /* eslint-disable */
 import formularioActividad from '../models/activityForm.js';
-<<<<<<< HEAD
-
-// Creacion de un formulario de actividad
-export const createFormularioActividad= async (req, res) => {
-    try{
-        const { tipoContacto, descripcion, montoVenta, fechaHora, opportunityId } = req.body;
-
-        if (!tipoContacto || !fechaHora || !opportunityId) {
-            return res.status(400).json({
-                message: "El tipo de contacto, fecha/hora y opportunityId son obligatorios"
-            });
-        }
-        
-=======
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
 
 // Creacion de un formulario de actividad
@@ -22,7 +8,6 @@ export const createFormularioActividad = asyncHandler(async (req, res) => {
 
     // La validación de campos obligatorios ya la hace
     // validateCreateActivityForm (middleware)
->>>>>>> 6b47ab9 (Creacion del middleware)
 
     const nuevaActividad = await formularioActividad.create({
         tipoContacto,
@@ -36,131 +21,6 @@ export const createFormularioActividad = asyncHandler(async (req, res) => {
         message: "Formulario de actividad creado exitosamente",
         data: nuevaActividad
     });
-<<<<<<< HEAD
-
-}catch(error){
-console.error("Error al crear el formulario de actividad:", error);
-return res.status(500).json({
-    message:"Hubo un error interno en el servidor",
-    error: error.message
-});
-
-}};
-
-
-// Obtener todos los formularios de actividad
-export const getAllFormulariosActividad = async (req, res) => {
-    try{
-        const formularios = await formularioActividad.findAll();
-
-        return res.status(200).json({
-            message: "Formularios de actividad obtenidos exitosamente",
-            data:formularios
-        });
-    }catch(error){
-        console.error("Error al obtener los formularios de actividad:", error);
-        return res.status(500).json({
-            message: "Hubo un error interno en el servidor",
-            error: error.message
-        });
-    }};
-
-
-// Obtener un formulario de actividad por su ID
-
-export const getFormularioActividadById = async (req, res)=> {
-    try{
-            const {idFormulario}= req.params;
-            const actividad = await formularioActividad.findByPk(idFormulario);
-
-            if(!actividad){
-                return res.status(404).json({
-                    message:"Formulario de actividad no encontrado"
-                });
-            }
-
-            return res.status(200).json({
-                message:"Formulario de actividad obtenido con exito",
-                data: actividad
-            });
-
-
-    }catch(error){
-            console.error("Error al obtener el formulario de actividad", error);
-            return res.status(500).json({
-                message:"Hubo un error interno en el servidor",
-                error: error.message
-            });
-    }};
-
-
-    // Actualizar un formulario de actividad por su ID
-
-export const updateFormularioActividadById = async (req, res) => {
-    try{
-        const {idFormulario}= req.params;
-        const{tipoContacto, descripcion, montoVenta, fechaHora, opportunityId}= req.body;
-
-        const actividad = await formularioActividad.findByPk(idFormulario);
-
-        if(!actividad){
-            return res.status(404).json({
-                message:"Formulario de actividad no encontrado",
-            });    
-        }
-
-        await actividad.update({
-            tipoContacto,
-            descripcion,
-            montoVenta,
-            fechaHora,
-            opportunityId
-        });
-
-        return res.status(200).json({
-            message:"Formulario de actividad actualizado exitosamente",
-            data: actividad
-        });
-
-    }catch(error){
-        console.error("Error al actualizar el formulario de actividad:", error);
-        return res.status(500).json({
-            message:"Hubo un error interno en el servidor",
-            error: error.message
-        });
-    }};
-
-
-// Eliminar un formulario de actividad por su ID
-export const deleteFormularioActividadById= async (req, res) => {
-    try{
-        const{idFormulario}= req.params;
-        const actividad = await formularioActividad.findByPk(idFormulario);
-
-        if(!actividad){
-            return res.status(404).json({
-                message:"Formulario de actividad no encontrado"
-            });
-        }
-
-        await actividad.destroy();
-
-        return res.status(200).json({
-            message:"Formulario de actividad eliminado exitosamente"
-
-        });
-
-
-    }catch(error){
-        console.error("Error al eliminar el formulario de actividad:", error);
-        return res.status(500).json({
-            message:"Hubo un error interno en el servidor",
-            error: error.message    
-        })
-    }};
-
-    
-=======
 });
 
 
@@ -238,4 +98,3 @@ export const deleteFormularioActividadById = asyncHandler(async (req, res) => {
         message: "Formulario de actividad eliminado exitosamente"
     });
 });
->>>>>>> 6b47ab9 (Creacion del middleware)
