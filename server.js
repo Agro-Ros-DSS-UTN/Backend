@@ -1,7 +1,14 @@
 /* eslint-disable */
 import express from 'express'
 import cors from 'cors'
-import { sequelize } from './src/models/index.js'
+import { 
+  sequelize, 
+  Client, 
+  Opportunity, 
+  activityForm, 
+  User, 
+  ProductLine 
+} from './src/models/index.js'
 import 'dotenv/config'
 import clientRoutes from './src/routes/client.route.js'
 import userRoutes from './src/routes/user.route.js'
@@ -33,10 +40,32 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
+app.get('/dashboard', async (req, res, next) => {
+  try {
+    // Consultas en paralelo a MySQL
+    const [clients, opportunities, activities, sellers, productLines] = await Promise.all([
+      Client ? Client.findAll() : [],
+      Opportunity ? Opportunity.findAll() : [],
+      activityForm ? activityForm.findAll() : [],
+      User ? User.findAll({ where: { role: 'vendedor' } }) : [],
+      ProductLine ? ProductLine.findAll() : []
+    ]);
+
+    res.json({
+      clients,
+      opportunities,
+      activities,
+      sellers,
+      objectives: [],
+      monthlySales: [],
+      productLines
+    });
+  } catch (error) {
+    next(error); // Pasa el error al errorHandler
+  }
+});
+
 // IMPORTANTE: estos dos van al final, después de todas las rutas.
-// notFoundHandler atrapa rutas inexistentes (404) y errorHandler atrapa
-// cualquier error que llegue por next(error) o por un controller envuelto
-// en asyncHandler que haya rechazado su promesa.
 app.use(notFoundHandler)
 app.use(errorHandler)
 

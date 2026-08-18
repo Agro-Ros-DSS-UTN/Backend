@@ -33,7 +33,7 @@ const Opportunity = sequelize.define('Opportunity', {
     allowNull: true
   },
   sellerId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(20),
     allowNull: false
   }
 }, {
