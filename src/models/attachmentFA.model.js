@@ -17,7 +17,7 @@ const AttachmentFA = sequelize.define('AttachmentFA', {
     allowNull: false,
     references: {
       model: 'formularios_actividad',
-      key: 'idFormulario'
+      key: 'id_formulario'
     }
   }
 }, {
