@@ -18,6 +18,9 @@ import serviceRoutes from './src/routes/service.route.js'
 import formularioActividadRoutes from './src/routes/Activity_Form.route.js'
 import clientCompanyRoutes from './src/routes/client_company.route.js'
 import opportunityRoutes from './src/routes/opportunity.route.js'
+import taskRoutes from './src/routes/task.route.js'
+import roadmapRoutes from './src/routes/roadmap.route.js'
+import internalNoteRoutes from './src/routes/internal_note.route.js'
 import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
 
 const port = process.env.PORT || 3000
@@ -35,6 +38,9 @@ app.use(serviceRoutes)
 app.use(formularioActividadRoutes)
 app.use('/clientCompany', clientCompanyRoutes)
 app.use(opportunityRoutes)
+app.use(taskRoutes)
+app.use(roadmapRoutes)
+app.use(internalNoteRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })

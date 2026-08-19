@@ -1,5 +1,7 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'agroros_crm_super_secret_jwt_key_2026';
 
 // Genera un token firmado a partir de los datos del usuario.
 // Se llama desde loginUser (user.controller.js) justo después de
@@ -10,7 +12,7 @@ export const generateToken = (user) => {
     role: user.role
   };
 
-  return jwt.sign(payload, process.env.JWT_SECRET, {
+  return jwt.sign(payload, JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h'
   });
 };
@@ -28,7 +30,7 @@ export const verifyToken = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       if (err.name === 'TokenExpiredError') {
         return res.status(401).json({ message: 'El token expiró, iniciá sesión nuevamente' });

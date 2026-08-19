@@ -17,9 +17,9 @@ import Objective from './objective.model.js';
 import service from './service.model.js';
 import attachmentFA from './attachmentFA.model.js';
 import Promotion from './promotion.js';
-
-
-
+import Task from './task.model.js';
+import Roadmap from './roadmap.model.js';
+import InternalNote from './internal_note.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -29,22 +29,45 @@ ClientPhone.belongsTo(Client, { foreignKey: 'clientNumDoc' });
 User.hasMany(UserPhone, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 UserPhone.belongsTo(User, { foreignKey: 'idUser' });
 
-// Relación Cliente -> EmpresaCliente (1..1)
-Client.hasOne(ClientCompany, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ClientCompany.belongsTo(Client, { foreignKey: 'clientNumDoc' });
-
-
-// Relación Localidad -> Cliente (1..n): un cliente pertenece a una localidad
-Locality.hasMany(Client, { foreignKey: 'codigoPostal', sourceKey: 'codPostal', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
-Client.belongsTo(Locality, { foreignKey: 'codigoPostal', targetKey: 'codPostal' });
+// Relación EmpresaCliente -> Cliente/Contacto (1..n)
+ClientCompany.hasMany(Client, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Client.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
 
 // Relación Provincia -> Localidad (1..n)
 Province.hasMany(Locality, { foreignKey: 'provinceId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Locality.belongsTo(Province, { foreignKey: 'provinceId' });
 
-// Relación Localidad -> EmpresaCliente (1..1)
+// Relación Localidad -> EmpresaCliente (1..n)
 Locality.hasMany(ClientCompany, { foreignKey: 'localityCodPostal', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 ClientCompany.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
+
+// Relación TipoProducto -> LineaProducto (1..n)
+TypeProduct.hasMany(ProductLine, { foreignKey: 'typeProductId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+ProductLine.belongsTo(TypeProduct, { foreignKey: 'typeProductId' });
+
+// Relación EmpresaCliente <-> LineaProd (muchos a muchos)
+ClientCompany.belongsToMany(ProductLine, {
+  through: 'empresa_linea_producto',
+  foreignKey: 'clientCompanyId',
+  otherKey: 'productLineId'
+});
+ProductLine.belongsToMany(ClientCompany, {
+  through: 'empresa_linea_producto',
+  foreignKey: 'productLineId',
+  otherKey: 'clientCompanyId'
+});
+
+// Relación EmpresaCliente <-> TipoCultivo (muchos a muchos)
+ClientCompany.belongsToMany(CultivationType, {
+  through: 'empresa_tipo_cultivo',
+  foreignKey: 'clientCompanyId',
+  otherKey: 'cultivationTypeId'
+});
+CultivationType.belongsToMany(ClientCompany, {
+  through: 'empresa_tipo_cultivo',
+  foreignKey: 'cultivationTypeId',
+  otherKey: 'clientCompanyId'
+});
 
 // Relación Promoción <-> LineaProd (muchos a muchos)
 Promotion.belongsToMany(ProductLine, {
@@ -70,111 +93,68 @@ Promotion.belongsToMany(Objective, {
   otherKey: 'objectiveId'
 });
 
+// Relación Usuario -> Vendedor (1..1)
+User.hasOne(Seller, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Seller.belongsTo(User, { foreignKey: 'idUser' });
 
+// Relación Usuario -> Notas Internas (1..n)
+User.hasMany(InternalNote, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+InternalNote.belongsTo(User, { foreignKey: 'idUser' });
 
-//Relacion FormularioActividad atributo ArchivosAdjuntos
+// Relación Vendedor -> FormularioActividad (1..n)
+Seller.hasMany(activityForm, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+activityForm.belongsTo(Seller, { foreignKey: 'sellerId' });
+
+// Relación Vendedor -> Objetivo (1..n)
+Seller.hasMany(Objective, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Objective.belongsTo(Seller, { foreignKey: 'sellerId' });
+
+// Relación Vendedor -> HojaRuta (1..n)
+Seller.hasMany(Roadmap, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Roadmap.belongsTo(Seller, { foreignKey: 'sellerId' });
+
+// Relación Vendedor -> Tareas Asignadas (1..n)
+Seller.hasMany(Task, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Task.belongsTo(Seller, { foreignKey: 'sellerId' });
+
+// Relación EmpresaCliente -> Oportunidad (1..n)
+ClientCompany.hasMany(Opportunity, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Opportunity.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
+
+// Relación EmpresaCliente -> Objetivo (1..n)
+ClientCompany.hasMany(Objective, { foreignKey: 'clientCompanyId', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
+Objective.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
+
+// Relación Vendedor -> Oportunidad (1..n)
+Seller.hasMany(Opportunity, { foreignKey: 'sellerId', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
+Opportunity.belongsTo(Seller, { foreignKey: 'sellerId' });
+
+// Relación Oportunidad -> FormularioActividad (1..n)
+Opportunity.hasMany(activityForm, { foreignKey: 'opportunityId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+activityForm.belongsTo(Opportunity, { foreignKey: 'opportunityId' });
+
+// Relación FormularioActividad -> Tareas de Seguimiento (1..n)
+activityForm.hasMany(Task, { foreignKey: 'formularioActividadId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+Task.belongsTo(activityForm, { foreignKey: 'formularioActividadId' });
+
+// Relación FormularioActividad -> Archivos Adjuntos (1..n)
 activityForm.hasMany(attachmentFA, {
   foreignKey: 'formularioActividadId',
-  as: 'archivos' // Alias para cuando hagas consultas
+  as: 'archivos'
 });
-
-// Un ArchivoAdjunto pertenece a un FormularioActividad
 attachmentFA.belongsTo(activityForm, {
   foreignKey: 'formularioActividadId'
 });
 
-
-// Relación EmpresaCliente <-> TipoProducto (muchos a muchos)
-ClientCompany.belongsToMany(TypeProduct, {
-  through: 'empresa_tipo_producto',
-  foreignKey: 'clientCompanyId',
-  otherKey: 'typeProductId'
-});
-TypeProduct.belongsToMany(ClientCompany, {
-  through: 'empresa_tipo_producto',
-  foreignKey: 'typeProductId',
-  otherKey: 'clientCompanyId'
-});
-
-ClientCompany.belongsToMany(ProductLine, {
-  through: 'empresa_linea_producto',
-  foreignKey: 'clientCompanyId',
-  otherKey: 'productLineId'
-});
-ProductLine.belongsToMany(ClientCompany, {
-  through: 'empresa_linea_producto',
-  foreignKey: 'productLineId',
-  otherKey: 'clientCompanyId'
-});
-// Relación EmpresaCliente <-> TipoCultivo (muchos a muchos)
-ClientCompany.belongsToMany(CultivationType, {
-  through: 'empresa_tipo_cultivo',
-  foreignKey: 'clientCompanyId',
-  otherKey: 'cultivationTypeId'
-});
-CultivationType.belongsToMany(ClientCompany, {
-  through: 'empresa_tipo_cultivo',
-  foreignKey: 'cultivationTypeId',
-  otherKey: 'clientCompanyId'
-});
-
-// Usuario -> Vendedor (1..1)
-User.hasOne(Seller, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Seller.belongsTo(User, { foreignKey: 'idUser' });
-
-// Vendedor <-> Cliente (muchos a muchos, "clientesAvisitar")
-Seller.belongsToMany(Client, {
-  through: 'vendedor_cliente',
-  foreignKey: 'sellerId',
-  otherKey: 'clientNumDoc'
-});
-Client.belongsToMany(Seller, {
-  through: 'vendedor_cliente',
-  foreignKey: 'clientNumDoc',
-  otherKey: 'sellerId'
-});
-
-// Vendedor -> FormularioActividad (1..*)
-Seller.hasMany(activityForm, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-activityForm.belongsTo(Seller, { foreignKey: 'sellerId' });
-
-// EmpresaServicio -> Oportunidad (1..1 en EmpresaServicio, 0..* en Oportunidad)
-ClientCompany.hasMany(Opportunity, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Opportunity.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
-
-// Relación Vendedor -> Oportunidad (1..*)
-Seller.hasMany(Opportunity, { foreignKey: 'sellerId', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
-Opportunity.belongsTo(Seller, { foreignKey: 'sellerId' });
-
-// Oportunidad <-> Objetivo (muchos a muchos)
-Opportunity.belongsToMany(Objective, {
-  through: 'oportunidad_objetivo',
-  foreignKey: 'opportunityId',
-  otherKey: 'objectiveId'
-});
-Objective.belongsToMany(Opportunity, {
-  through: 'oportunidad_objetivo',
-  foreignKey: 'objectiveId',
-  otherKey: 'opportunityId'
-});
-
-// Relación Oportunidad -> FormularioActividad (1..*)
-Opportunity.hasMany(activityForm, { foreignKey: 'opportunityId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-activityForm.belongsTo(Opportunity, { foreignKey: 'opportunityId' });
-
-// Relación FormularioActividad -> Servicio (1 a N)
+// Relación FormularioActividad -> Servicio (1..n)
 activityForm.hasMany(service, {
-    foreignKey: 'formularioActividadId',
-    onDelete: 'CASCADE', 
-    onUpdate: 'CASCADE'
+  foreignKey: 'formularioActividadId',
+  onDelete: 'CASCADE', 
+  onUpdate: 'CASCADE'
 });
-
 service.belongsTo(activityForm, {
-    foreignKey: 'formularioActividadId'
+  foreignKey: 'formularioActividadId'
 });
-
-
-
 
 export {
   sequelize,
@@ -194,5 +174,8 @@ export {
   Objective,
   service,
   attachmentFA,
-  Promotion
+  Promotion,
+  Task,
+  Roadmap,
+  InternalNote
 };
