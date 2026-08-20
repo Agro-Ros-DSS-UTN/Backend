@@ -1,4 +1,4 @@
-﻿/* eslint-disable */
+/* eslint-disable */
 import User from '../models/user.model.js';
 import bcrypt from 'bcrypt';
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
@@ -8,27 +8,42 @@ import { generateToken } from '../middlewares/auth.middleware.js';
 export const createUser = asyncHandler(async (req, res) => {
   const { idUser, nombreApellido, direccionMail, password, accountStatement, role } = req.body || {};
 
+  const existingUser = await User.findByPk(idUser);
+  if (existingUser) {
+    return res.status(409).json({
+      message: `Ya existe un usuario registrado con el ID "${idUser}"`
+    });
+  }
+
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   const newUser = await User.create({
     idUser,
     nombreApellido,
-    direccionMail,
+    direccionMail: direccionMail || null,
     password: hashedPassword,
-    accountStatement,
+    accountStatement: accountStatement || 'Activo',
     role
   });
 
   return res.status(201).json({
     message: 'Usuario creado exitosamente',
-    data: newUser
+    data: {
+      idUser: newUser.idUser,
+      nombreApellido: newUser.nombreApellido,
+      direccionMail: newUser.direccionMail,
+      accountStatement: newUser.accountStatement,
+      role: newUser.role
+    }
   });
 });
 
 // 2. Obtener todos los usuarios
 export const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.findAll();
+  const users = await User.findAll({
+    attributes: { exclude: ['password'] }
+  });
 
   return res.status(200).json({
     message: 'Usuarios obtenidos exitosamente',
@@ -39,7 +54,9 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 // 3. Obtener un usuario por su idUser
 export const getUserById = asyncHandler(async (req, res) => {
   const { idUser } = req.params;
-  const user = await User.findByPk(idUser);
+  const user = await User.findByPk(idUser, {
+    attributes: { exclude: ['password'] }
+  });
 
   if (!user) {
     return res.status(404).json({
