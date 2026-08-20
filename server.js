@@ -14,10 +14,7 @@ import clientRoutes from './src/routes/client.route.js'
 import userRoutes from './src/routes/user.route.js'
 import localityRoutes from './src/routes/locality.route.js'
 import lineaProdRoutes from './src/routes/product_line.route.js'
-<<<<<<< HEAD
 import productRoutes from './src/routes/product.route.js'
-=======
->>>>>>> ac4084c82e780928101dc6198b891ac91c581606
 import serviceRoutes from './src/routes/service.route.js'
 import formularioActividadRoutes from './src/routes/Activity_Form.route.js'
 import clientCompanyRoutes from './src/routes/client_company.route.js'
@@ -38,10 +35,7 @@ app.use(clientRoutes)
 app.use(userRoutes) 
 app.use(localityRoutes)
 app.use(lineaProdRoutes)
-<<<<<<< HEAD
 app.use('/productos', productRoutes)
-=======
->>>>>>> ac4084c82e780928101dc6198b891ac91c581606
 app.use(serviceRoutes)
 app.use(formularioActividadRoutes)
 app.use('/clientCompany', clientCompanyRoutes)
