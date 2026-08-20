@@ -9,7 +9,10 @@ import Locality from './locality.model.js';
 import Province from './province.model.js';
 import TypeProduct from './type_product.model.js';
 import ProductLine from './product_line.model.js';
+<<<<<<< HEAD
 import Product from './product.model.js';
+=======
+>>>>>>> ac4084c82e780928101dc6198b891ac91c581606
 import CultivationType from './cultivation_type.model.js';
 import Seller from './seller.model.js';
 import activityForm from './activityForm.js';
@@ -168,7 +171,10 @@ export {
   Province,
   TypeProduct,
   ProductLine,
+<<<<<<< HEAD
   Product,
+=======
+>>>>>>> ac4084c82e780928101dc6198b891ac91c581606
   CultivationType,
   Seller,
   activityForm,
