@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import User from '../models/user.model.js';
 import bcrypt from 'bcrypt';
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
@@ -6,9 +6,8 @@ import { generateToken } from '../middlewares/auth.middleware.js';
 
 // 1. Creación de un usuario
 export const createUser = asyncHandler(async (req, res) => {
-  const { idUser, nombreApellido, direccionMail, password, accountStatement, role } = req.body;
+  const { idUser, nombreApellido, direccionMail, password, accountStatement, role } = req.body || {};
 
-  // La validación de campos obligatorios ya la hace validateCreateUser (middleware)
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -27,7 +26,6 @@ export const createUser = asyncHandler(async (req, res) => {
   });
 });
 
-
 // 2. Obtener todos los usuarios
 export const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.findAll();
@@ -37,7 +35,6 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     data: users
   });
 });
-
 
 // 3. Obtener un usuario por su idUser
 export const getUserById = asyncHandler(async (req, res) => {
@@ -56,11 +53,10 @@ export const getUserById = asyncHandler(async (req, res) => {
   });
 });
 
-
 // 4. Actualizar un usuario por su idUser
 export const updateUserById = asyncHandler(async (req, res) => {
   const { idUser } = req.params;
-  const { nombreApellido, direccionMail, password, accountStatement, role } = req.body;
+  const { nombreApellido, direccionMail, password, accountStatement, role } = req.body || {};
 
   const user = await User.findByPk(idUser);
 
@@ -89,7 +85,6 @@ export const updateUserById = asyncHandler(async (req, res) => {
   });
 });
 
-
 // 5. Eliminar un usuario por su idUser
 export const deleteUserById = asyncHandler(async (req, res) => {
   const { idUser } = req.params;
@@ -108,15 +103,11 @@ export const deleteUserById = asyncHandler(async (req, res) => {
   });
 });
 
-
 // 6. Login de usuario por ID y contraseña
 export const loginUser = asyncHandler(async (req, res) => {
-  // Permite recibir idUser o id por compatibilidad desde el body
-  const { idUser, id, password } = req.body;
+  const { idUser, id, password } = req.body || {};
   const userIdToSearch = idUser || id;
-  // La validación de campos obligatorios ya la hace validateLogin (middleware)
 
-  // Busca por la PK actual (idUser)
   const user = await User.findByPk(userIdToSearch);
 
   if (!user) {
