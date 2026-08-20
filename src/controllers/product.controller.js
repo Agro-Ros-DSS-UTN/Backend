@@ -1,8 +1,8 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import { Product } from '../models/index.js';
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
 
-// Creación de un producto
+// 1. Creación de un producto
 export const createProduct = asyncHandler(async (req, res) => {
     const {
         nombre,
@@ -15,10 +15,8 @@ export const createProduct = asyncHandler(async (req, res) => {
         activo,
         imagenUrl,
         stockDisponible,
-    } = req.body;
+    } = req.body || {};
 
-    // La validación de campos obligatorios ya la hace
-    // validateCreateProduct (middleware)
     const newProduct = await Product.create({
         nombre,
         ref: ref || `SKU-${Date.now().toString().slice(-6)}`,
@@ -27,7 +25,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         frecuenciaFacturacion: frecuenciaFacturacion || 'Pago único',
         precioUnitario: Number(precioUnitario) || 0,
         costeUnidad: Number(costeUnidad) || 0,
-        activo: activo !== undefined ? activo : true,
+        activo: activo !== undefined ? Boolean(activo) : true,
         imagenUrl: imagenUrl || null,
         stockDisponible: stockDisponible !== undefined ? Number(stockDisponible) : 0,
         fechaCreacion: new Date(),
@@ -39,8 +37,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     });
 });
 
-
-// Obtener todos los productos
+// 2. Obtener todos los productos
 export const getAllProducts = asyncHandler(async (req, res) => {
     const products = await Product.findAll({
         order: [['id', 'DESC']]
@@ -52,8 +49,7 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     });
 });
 
-
-// Obtener un producto por su id
+// 3. Obtener un producto por su id
 export const getProductById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const product = await Product.findByPk(id);
@@ -70,8 +66,7 @@ export const getProductById = asyncHandler(async (req, res) => {
     });
 });
 
-
-// Actualizar un producto por su id
+// 4. Actualizar un producto por su id
 export const updateProductById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const {
@@ -85,7 +80,7 @@ export const updateProductById = asyncHandler(async (req, res) => {
         activo,
         imagenUrl,
         stockDisponible,
-    } = req.body;
+    } = req.body || {};
 
     const product = await Product.findByPk(id);
 
@@ -103,7 +98,7 @@ export const updateProductById = asyncHandler(async (req, res) => {
         frecuenciaFacturacion: frecuenciaFacturacion ?? product.frecuenciaFacturacion,
         precioUnitario: precioUnitario !== undefined ? Number(precioUnitario) : product.precioUnitario,
         costeUnidad: costeUnidad !== undefined ? Number(costeUnidad) : product.costeUnidad,
-        activo: activo !== undefined ? activo : product.activo,
+        activo: activo !== undefined ? Boolean(activo) : product.activo,
         imagenUrl: imagenUrl !== undefined ? imagenUrl : product.imagenUrl,
         stockDisponible: stockDisponible !== undefined ? Number(stockDisponible) : product.stockDisponible,
     });
@@ -114,8 +109,7 @@ export const updateProductById = asyncHandler(async (req, res) => {
     });
 });
 
-
-// Eliminar un producto por su id
+// 5. Eliminar un producto por su id
 export const deleteProductById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const product = await Product.findByPk(id);

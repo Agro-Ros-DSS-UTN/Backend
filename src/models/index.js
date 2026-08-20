@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import sequelize from '../config/database.js';
 import Client from './client.model.js';
 import User from './user.model.js';
@@ -33,6 +33,10 @@ UserPhone.belongsTo(User, { foreignKey: 'idUser' });
 // Relación EmpresaCliente -> Cliente/Contacto (1..n)
 ClientCompany.hasMany(Client, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Client.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
+
+// Relación Localidad -> Cliente (1..n)
+Locality.hasMany(Client, { foreignKey: 'localityCodPostal', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
+Client.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
 
 // Relación Provincia -> Localidad (1..n)
 Province.hasMany(Locality, { foreignKey: 'provinceId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });

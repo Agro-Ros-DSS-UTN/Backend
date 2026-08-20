@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import express from 'express'
 import cors from 'cors'
 import { 
@@ -30,7 +30,9 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 const app = express()
 
 app.use(cors({ origin: frontendUrl, credentials: true }))
-app.use(express.json())
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
+
 app.use(clientRoutes)
 app.use(userRoutes) 
 app.use(localityRoutes)
