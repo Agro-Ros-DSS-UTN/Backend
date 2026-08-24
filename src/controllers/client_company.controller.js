@@ -1,19 +1,19 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import ClientCompany from '../models/client_company.model.js';
-
-
+import Locality from '../models/locality.model.js';
 
 export const getClientCompany = async (req, res) => {
   try {
-    const { tipoEmpresa, localityCodPostal} = req.query;
+    const { tipoEmpresa, localityCodPostal } = req.query;
 
-    // Construimos el filtro dinámico según lo que envíe el cliente
     const filter = {};
     if (tipoEmpresa) filter.tipoEmpresa = tipoEmpresa;
     if (localityCodPostal) filter.localityCodPostal = localityCodPostal;
 
-    // Solo seleccionamos los campos requeridos: nombre y estado (y el id para ir al detalle)
-    const empresas = await ClientCompany.find(filter).select('nombre estado');
+    const empresas = await ClientCompany.findAll({
+      where: filter,
+      include: [{ model: Locality }]
+    });
 
     return res.status(200).json({
       ok: true,

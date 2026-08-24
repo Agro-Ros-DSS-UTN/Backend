@@ -22,6 +22,8 @@ import opportunityRoutes from './src/routes/opportunity.route.js'
 import taskRoutes from './src/routes/task.route.js'
 import roadmapRoutes from './src/routes/roadmap.route.js'
 import internalNoteRoutes from './src/routes/internal_note.route.js'
+import objectiveRoutes from './src/routes/objective.route.js'
+import promotionRoutes from './src/routes/promotion.route.js'
 import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
 
 const port = process.env.PORT || 3000
@@ -45,6 +47,8 @@ app.use(opportunityRoutes)
 app.use(taskRoutes)
 app.use(roadmapRoutes)
 app.use(internalNoteRoutes)
+app.use(objectiveRoutes)
+app.use(promotionRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
@@ -52,7 +56,6 @@ app.get('/api/health', (req, res) => {
 
 app.get('/dashboard', async (req, res, next) => {
   try {
-    // Consultas en paralelo a MySQL
     const [clients, opportunities, activities, sellers, productLines] = await Promise.all([
       Client ? Client.findAll() : [],
       Opportunity ? Opportunity.findAll() : [],
@@ -71,11 +74,10 @@ app.get('/dashboard', async (req, res, next) => {
       productLines
     });
   } catch (error) {
-    next(error); // Pasa el error al errorHandler
+    next(error);
   }
 });
 
-// IMPORTANTE: estos dos van al final, después de todas las rutas.
 app.use(notFoundHandler)
 app.use(errorHandler)
 
@@ -83,14 +85,14 @@ async function startServer() {
   try {
     await sequelize.sync({ alter: true })
     console.log('---------------------------------------------------------')
-    console.log('     ¡Conexión a MySQL exitosa y tablas sincronizadas!  ')
+    console.log('     Conexión a MySQL exitosa y tablas sincronizadas!  ')
     console.log('---------------------------------------------------------')
 
     app.listen(port, () => {
-      console.log(`API corriendo en http://localhost:${port}`)
+      console.log(API corriendo en http://localhost:)
     })
   } catch (error) {
-    console.error('❌ ERROR CRÍTICO al conectar la base de datos:', error)
+    console.error('ERROR CRÍTICO al conectar la base de datos:', error)
     process.exit(1)
   }
 }

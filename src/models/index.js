@@ -20,6 +20,7 @@ import attachmentFA from './attachmentFA.model.js';
 import Promotion from './promotion.js';
 import Task from './task.model.js';
 import Roadmap from './roadmap.model.js';
+import RoadmapStop from './roadmap_stop.model.js';
 import InternalNote from './internal_note.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
@@ -118,6 +119,10 @@ Objective.belongsTo(Seller, { foreignKey: 'sellerId' });
 Seller.hasMany(Roadmap, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Roadmap.belongsTo(Seller, { foreignKey: 'sellerId' });
 
+// Relación HojaRuta -> Paradas (1..n)
+Roadmap.hasMany(RoadmapStop, { foreignKey: 'roadmapId', as: 'paradas', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+RoadmapStop.belongsTo(Roadmap, { foreignKey: 'roadmapId' });
+
 // Relación Vendedor -> Tareas Asignadas (1..n)
 Seller.hasMany(Task, { foreignKey: 'sellerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Task.belongsTo(Seller, { foreignKey: 'sellerId' });
@@ -183,5 +188,6 @@ export {
   Promotion,
   Task,
   Roadmap,
+  RoadmapStop,
   InternalNote
 };
