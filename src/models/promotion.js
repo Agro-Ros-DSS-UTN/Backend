@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -14,23 +14,23 @@ const Promotion = sequelize.define('Promotion', {
   },
   fechaInicio: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: false,
+    field: 'fecha_inicio'
   },
   descripcion: {
     type: DataTypes.STRING(255),
     allowNull: true
-},
-fechaFin: {
-    type: DataTypes.DATE,
-    allowNull: false
   },
-condiciones: {
+  fechaFin: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    field: 'fecha_fin'
+  },
+  condiciones: {
     type: DataTypes.STRING(255),
     allowNull: true
-  },    
-  
-},{
-
+  }
+}, {
   tableName: 'promociones',
   timestamps: false
 });

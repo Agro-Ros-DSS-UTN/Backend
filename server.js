@@ -85,14 +85,14 @@ async function startServer() {
   try {
     await sequelize.sync({ alter: true })
     console.log('---------------------------------------------------------')
-    console.log('     Conexión a MySQL exitosa y tablas sincronizadas!  ')
+    console.log('     ¡Conexión a MySQL exitosa y tablas sincronizadas!  ')
     console.log('---------------------------------------------------------')
 
     app.listen(port, () => {
-      console.log(API corriendo en http://localhost:)
+      console.log(`API corriendo en http://localhost:${port}`)
     })
   } catch (error) {
-    console.error('ERROR CRÍTICO al conectar la base de datos:', error)
+    console.error('❌ ERROR CRÍTICO al conectar la base de datos:', error)
     process.exit(1)
   }
 }
