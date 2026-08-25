@@ -12,17 +12,17 @@ import {
 import 'dotenv/config'
 import clientRoutes from './src/routes/client.route.js'
 import userRoutes from './src/routes/user.route.js'
-import localityRoutes from './src/routes/locality.route.js'
-import lineaProdRoutes from './src/routes/product_line.route.js'
+import cityRoutes from './src/routes/locality.route.js'
+import productLineRoutes from './src/routes/product_line.route.js'
 import productRoutes from './src/routes/product.route.js'
 import serviceRoutes from './src/routes/service.route.js'
-import formularioActividadRoutes from './src/routes/Activity_Form.route.js'
+import activityFormRoutes from './src/routes/Activity_Form.route.js'
 import clientCompanyRoutes from './src/routes/client_company.route.js'
 import opportunityRoutes from './src/routes/opportunity.route.js'
 import taskRoutes from './src/routes/task.route.js'
 import roadmapRoutes from './src/routes/roadmap.route.js'
 import internalNoteRoutes from './src/routes/internal_note.route.js'
-import objectiveRoutes from './src/routes/objective.route.js'
+import targetRoutes from './src/routes/objective.route.js'
 import promotionRoutes from './src/routes/promotion.route.js'
 import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
 
@@ -37,17 +37,17 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 app.use(clientRoutes)
 app.use(userRoutes) 
-app.use(localityRoutes)
-app.use(lineaProdRoutes)
+app.use(cityRoutes)
+app.use(productLineRoutes)
 app.use('/productos', productRoutes)
 app.use(serviceRoutes)
-app.use(formularioActividadRoutes)
+app.use(activityFormRoutes)
 app.use('/clientCompany', clientCompanyRoutes)
 app.use(opportunityRoutes)
 app.use(taskRoutes)
 app.use(roadmapRoutes)
 app.use(internalNoteRoutes)
-app.use(objectiveRoutes)
+app.use(targetRoutes)
 app.use(promotionRoutes)
 
 app.get('/api/health', (req, res) => {
