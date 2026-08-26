@@ -1,13 +1,11 @@
-/* eslint-disable */
-// Validaciones extraídas de activity_form.controller.js
-
-// Usado en: POST /formulario-actividad (createFormularioActividad)
+﻿/* eslint-disable */
+// Validaciones para formularios de actividad
 export const validateCreateActivityForm = (req, res, next) => {
-  const { tipoContacto, fechaHora, opportunityId } = req.body;
+  const { tipoContacto, descripcion } = req.body;
 
-  if (!tipoContacto || !fechaHora || !opportunityId) {
+  if (!tipoContacto && !descripcion) {
     return res.status(400).json({
-      message: 'El tipo de contacto, fecha/hora y opportunityId son obligatorios'
+      message: 'El tipo de contacto o la descripción de la actividad es obligatoria'
     });
   }
 

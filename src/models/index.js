@@ -2,15 +2,15 @@
 import sequelize from '../config/database.js';
 import Client from './client.model.js';
 import User from './user.model.js';
-import ClientPhone from './client_phone.model.js';
-import UserPhone from './user_phone.model.js';
-import ClientCompany from './client_company.model.js';
+import ClientPhone from './clientPhone.model.js';
+import UserPhone from './userPhone.model.js';
+import ClientCompany from './clientCompany.model.js';
 import Locality from './locality.model.js';
 import Province from './province.model.js';
-import TypeProduct from './type_product.model.js';
-import ProductLine from './product_line.model.js';
+import TypeProduct from './typeProduct.model.js';
+import ProductLine from './productLine.model.js';
 import Product from './product.model.js';
-import CultivationType from './cultivation_type.model.js';
+import CultivationType from './cultivationType.model.js';
 import Seller from './seller.model.js';
 import activityForm from './activityForm.js';
 import Opportunity from './opportunity.model.js';
@@ -20,8 +20,8 @@ import attachmentFA from './attachmentFA.model.js';
 import Promotion from './promotion.js';
 import Task from './task.model.js';
 import Roadmap from './roadmap.model.js';
-import RoadmapStop from './roadmap_stop.model.js';
-import InternalNote from './internal_note.model.js';
+import RoadmapStop from './roadmapStop.model.js';
+import InternalNote from './internalNote.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });

@@ -1,6 +1,6 @@
 /* eslint-disable */
 import Opportunity from '../models/opportunity.model.js';
-import ClientCompany from '../models/client_company.model.js';
+import ClientCompany from '../models/clientCompany.model.js';
 import Objective from '../models/objective.model.js';
 import Seller from '../models/seller.model.js';
 import User from '../models/user.model.js';

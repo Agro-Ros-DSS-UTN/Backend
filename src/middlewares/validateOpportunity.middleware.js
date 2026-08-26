@@ -1,5 +1,5 @@
 /* eslint-disable */
-import ClientCompany from '../models/client_company.model.js';
+import ClientCompany from '../models/clientCompany.model.js';
 import Seller from '../models/seller.model.js';
 
 // Usado en: POST /opportunities (createOpportunity)

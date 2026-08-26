@@ -1,5 +1,5 @@
 ﻿/* eslint-disable */
-import ClientCompany from '../models/client_company.model.js';
+import ClientCompany from '../models/clientCompany.model.js';
 import Locality from '../models/locality.model.js';
 
 export const getClientCompany = async (req, res) => {

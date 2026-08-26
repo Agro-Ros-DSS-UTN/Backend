@@ -6,7 +6,7 @@ import {
     getLineaProdById,
     updateLineaProdById,
     deleteLineaProdById
-} from '../controllers/product_line.controller.js';
+} from '../controllers/productLine.controller.js';
 import { validateCreateProductLine } from '../middlewares/validateProductLine.middleware.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 

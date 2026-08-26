@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { Router } from 'express';
-import { createInternalNote, getAllInternalNotes } from '../controllers/internal_note.controller.js';
+import { createInternalNote, getAllInternalNotes } from '../controllers/internalNote.controller.js';
 
 const router = Router();
 

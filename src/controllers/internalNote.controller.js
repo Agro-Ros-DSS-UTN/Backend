@@ -1,5 +1,5 @@
 /* eslint-disable */
-import InternalNote from '../models/internal_note.model.js';
+import InternalNote from '../models/internalNote.model.js';
 
 export const createInternalNote = async (req, res) => {
   try {

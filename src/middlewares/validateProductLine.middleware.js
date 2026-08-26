@@ -1,5 +1,5 @@
 /* eslint-disable */
-// Validaciones extraídas de product_line.controller.js
+// Validaciones extraídas de productLine.controller.js
 
 // Usado en: POST /productLines (createLineaProd)
 export const validateCreateProductLine = (req, res, next) => {

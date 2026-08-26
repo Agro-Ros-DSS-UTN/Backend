@@ -1,6 +1,6 @@
 ﻿/* eslint-disable */
 import Roadmap from '../models/roadmap.model.js';
-import RoadmapStop from '../models/roadmap_stop.model.js';
+import RoadmapStop from '../models/roadmapStop.model.js';
 import Seller from '../models/seller.model.js';
 import User from '../models/user.model.js';
 
