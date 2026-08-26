@@ -6,7 +6,7 @@ export const getAllObjectives = async (req, res, next) => {
       include: [
         {
           model: Seller,
-          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'email'] }]
+          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] }]
         },
         ClientCompany
       ],
@@ -29,7 +29,7 @@ export const getObjectivesBySeller = async (req, res, next) => {
       include: [
         {
           model: Seller,
-          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'email'] }]
+          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] }]
         },
         ClientCompany
       ],
@@ -84,7 +84,7 @@ export const createObjective = async (req, res, next) => {
       include: [
         {
           model: Seller,
-          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'email'] }]
+          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] }]
         },
         ClientCompany
       ]
@@ -108,7 +108,7 @@ export const updateObjective = async (req, res, next) => {
       include: [
         {
           model: Seller,
-          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'email'] }]
+          include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] }]
         },
         ClientCompany
       ]
