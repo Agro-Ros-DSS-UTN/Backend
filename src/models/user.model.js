@@ -33,6 +33,12 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(50),
     allowNull: false,
     field: 'role'
+  },
+  profileImage: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true,
+    field: 'profile_image',
+    defaultValue: null
   }
 }, 
 {
