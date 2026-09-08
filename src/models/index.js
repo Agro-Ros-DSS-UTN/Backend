@@ -22,6 +22,9 @@ import Task from './task.model.js';
 import Roadmap from './roadmap.model.js';
 import RoadmapStop from './roadmapStop.model.js';
 import InternalNote from './internalNote.model.js';
+import ServiceOrder from './serviceOrder.model.js';
+import ServiceOrderProduct from './serviceOrderProduct.model.js';
+import ServiceEvaluation from './serviceEvaluation.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -166,6 +169,28 @@ service.belongsTo(activityForm, {
   foreignKey: 'formularioActividadId'
 });
 
+
+// ── Relaciones Órdenes de Servicio ──
+ServiceOrder.hasMany(ServiceOrderProduct, {
+  as: 'productosAplicados',
+  foreignKey: 'ordenServicioId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+ServiceOrderProduct.belongsTo(ServiceOrder, {
+  foreignKey: 'ordenServicioId'
+});
+
+ServiceOrder.hasOne(ServiceEvaluation, {
+  as: 'evaluacion',
+  foreignKey: 'ordenServicioId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+ServiceEvaluation.belongsTo(ServiceOrder, {
+  foreignKey: 'ordenServicioId'
+});
+
 export {
   sequelize,
   Client,
@@ -189,5 +214,8 @@ export {
   Task,
   Roadmap,
   RoadmapStop,
-  InternalNote
+  InternalNote,
+  ServiceOrder,
+  ServiceOrderProduct,
+  ServiceEvaluation
 };

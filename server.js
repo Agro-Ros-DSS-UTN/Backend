@@ -16,6 +16,7 @@ import cityRoutes from './src/routes/locality.route.js'
 import productLineRoutes from './src/routes/productLine.route.js'
 import productRoutes from './src/routes/product.route.js'
 import serviceRoutes from './src/routes/service.route.js'
+import serviceOrderRoutes from './src/routes/serviceOrder.route.js'
 import activityFormRoutes from './src/routes/activityForm.route.js'
 import clientCompanyRoutes from './src/routes/clientCompany.route.js'
 import opportunityRoutes from './src/routes/opportunity.route.js'
@@ -41,6 +42,7 @@ app.use(cityRoutes)
 app.use(productLineRoutes)
 app.use('/productos', productRoutes)
 app.use(serviceRoutes)
+app.use(serviceOrderRoutes)
 app.use(activityFormRoutes)
 app.use('/clientCompany', clientCompanyRoutes)
 app.use(opportunityRoutes)
