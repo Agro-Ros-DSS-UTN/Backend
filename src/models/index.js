@@ -25,6 +25,7 @@ import InternalNote from './internalNote.model.js';
 import ServiceOrder from './serviceOrder.model.js';
 import ServiceOrderProduct from './serviceOrderProduct.model.js';
 import ServiceEvaluation from './serviceEvaluation.model.js';
+import Employee from './employee.model.js';
 
 // Relación Cliente -> Telefonos (1..n)
 Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
@@ -217,5 +218,6 @@ export {
   InternalNote,
   ServiceOrder,
   ServiceOrderProduct,
-  ServiceEvaluation
+  ServiceEvaluation,
+  Employee
 };

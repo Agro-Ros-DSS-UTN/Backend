@@ -5,30 +5,16 @@ import Seller from '../models/seller.model.js';
 // Usado en: POST /opportunities (createOpportunity)
 export const validateCreateOpportunity = async (req, res, next) => {
   try {
-    const { estado, fechaInicio, clientCompanyId, sellerId } = req.body;
+    const { nombreNegocio, estado } = req.body;
 
-    if (!estado || !fechaInicio || !clientCompanyId || !sellerId) {
+    if (!nombreNegocio && !estado) {
       return res.status(400).json({
-        message: 'El estado, fechaInicio, clientCompanyId y sellerId son campos obligatorios'
+        message: 'El nombre del negocio es obligatorio'
       });
     }
 
-    // Validar que la EmpresaCliente exista
-    const clientCompany = await ClientCompany.findByPk(clientCompanyId);
-    if (!clientCompany) {
-      return res.status(404).json({
-        message: 'La EmpresaCliente indicada no existe. No se puede crear la oportunidad.'
-      });
-    }
-
-    // Validar que el Vendedor exista
-    const seller = await Seller.findByPk(sellerId);
-    if (!seller) {
-      return res.status(404).json({
-        message: 'El Vendedor indicado no existe. No se puede crear la oportunidad.'
-      });
-    }
-
+    // La empresa y el vendedor son opcionales; el controlador resuelve/omite
+    // los ids que no existan para no romper las FK.
     next();
   } catch (error) {
     console.error('Error al validar la oportunidad:', error);

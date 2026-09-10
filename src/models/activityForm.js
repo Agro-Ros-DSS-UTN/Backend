@@ -31,6 +31,11 @@ const FormularioActividad = sequelize.define('FormularioActividad', {
     defaultValue: DataTypes.NOW,
     field: 'fecha_hora'
   },
+  empresa: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+    field: 'empresa'
+  },
   opportunityId: {
     type: DataTypes.INTEGER,
     allowNull: true,

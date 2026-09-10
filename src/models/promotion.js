@@ -12,6 +12,14 @@ const Promotion = sequelize.define('Promotion', {
     type: DataTypes.STRING(100),
     allowNull: false
   },
+  beneficio: {
+    type: DataTypes.STRING(120),
+    allowNull: true // ej. "15% OFF", "3 cuotas sin interés", "Oferta Exclusiva"
+  },
+  color: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
   fechaInicio: {
     type: DataTypes.DATE,
     allowNull: false,

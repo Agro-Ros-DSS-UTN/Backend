@@ -1,6 +1,23 @@
 ﻿/* eslint-disable */
 import formularioActividad from '../models/activityForm.js';
+import Seller from '../models/seller.model.js';
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
+
+// Resuelve el id real de `sellers` (id numérico o idUser del vendedor). null si no existe,
+// para no violar la FK formularios_actividad.seller_id -> sellers.id
+const resolveSellerId = async (rawId) => {
+  if (rawId === undefined || rawId === null || rawId === '') return null;
+  try {
+    if (!isNaN(Number(rawId))) {
+      const byPk = await Seller.findByPk(Number(rawId));
+      if (byPk) return byPk.id;
+    }
+    const byUser = await Seller.findOne({ where: { idUser: String(rawId) } });
+    return byUser ? byUser.id : null;
+  } catch (_) {
+    return null;
+  }
+};
 
 // Creación de un formulario de actividad en MySQL
 export const createFormularioActividad = asyncHandler(async (req, res) => {
@@ -12,7 +29,8 @@ export const createFormularioActividad = asyncHandler(async (req, res) => {
     opportunityId,
     sellerId,
     archivoAdjunto,
-    autorNombre
+    autorNombre,
+    empresa
   } = req.body;
 
   const nuevaActividad = await formularioActividad.create({
@@ -20,8 +38,9 @@ export const createFormularioActividad = asyncHandler(async (req, res) => {
     descripcion: descripcion || '',
     montoVenta: montoVenta ? Number(montoVenta) : 0,
     fechaHora: fechaHora || new Date(),
+    empresa: empresa || null,
     opportunityId: (opportunityId && !isNaN(Number(opportunityId))) ? Number(opportunityId) : null,
-    sellerId: (sellerId && !isNaN(Number(sellerId))) ? Number(sellerId) : 1,
+    sellerId: await resolveSellerId(sellerId),
     archivoAdjunto: typeof archivoAdjunto === 'object' ? JSON.stringify(archivoAdjunto) : (archivoAdjunto || null),
     autorNombre: autorNombre || 'Equipo AgroRos'
   });
@@ -67,7 +86,8 @@ export const updateFormularioActividadById = asyncHandler(async (req, res) => {
     opportunityId,
     sellerId,
     archivoAdjunto,
-    autorNombre
+    autorNombre,
+    empresa
   } = req.body;
 
   const actividad = await formularioActividad.findByPk(id);
@@ -83,6 +103,7 @@ export const updateFormularioActividadById = asyncHandler(async (req, res) => {
     descripcion: descripcion ?? actividad.descripcion,
     montoVenta: montoVenta !== undefined ? Number(montoVenta) : actividad.montoVenta,
     fechaHora: fechaHora ?? actividad.fechaHora,
+    empresa: empresa !== undefined ? empresa : actividad.empresa,
     opportunityId: opportunityId !== undefined ? opportunityId : actividad.opportunityId,
     sellerId: sellerId !== undefined ? sellerId : actividad.sellerId,
     archivoAdjunto: archivoAdjunto !== undefined ? (typeof archivoAdjunto === 'object' ? JSON.stringify(archivoAdjunto) : archivoAdjunto) : actividad.archivoAdjunto,

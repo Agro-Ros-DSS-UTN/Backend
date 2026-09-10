@@ -25,6 +25,7 @@ import roadmapRoutes from './src/routes/roadmap.route.js'
 import internalNoteRoutes from './src/routes/internalNote.route.js'
 import targetRoutes from './src/routes/objective.route.js'
 import promotionRoutes from './src/routes/promotion.route.js'
+import employeeRoutes from './src/routes/employee.route.js'
 import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
 
 const port = process.env.PORT || 3000
@@ -51,6 +52,7 @@ app.use(roadmapRoutes)
 app.use(internalNoteRoutes)
 app.use(targetRoutes)
 app.use(promotionRoutes)
+app.use(employeeRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })

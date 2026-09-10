@@ -108,11 +108,27 @@ export const createRoadmap = async (req, res) => {
   }
 };
 
+// Resuelve el id real de `sellers` desde un id numérico o desde el idUser del vendedor.
+const resolveSellerId = async (rawId) => {
+  if (rawId === undefined || rawId === null || rawId === '') return null;
+  if (!isNaN(Number(rawId))) {
+    const byPk = await Seller.findByPk(Number(rawId));
+    if (byPk) return byPk.id;
+  }
+  const byUser = await Seller.findOne({ where: { idUser: String(rawId) } });
+  return byUser ? byUser.id : null;
+};
+
 export const getRoadmapsBySeller = async (req, res) => {
   try {
     const { sellerId } = req.params;
+    const resolvedId = await resolveSellerId(sellerId);
+
+    // Sin vendedor resuelto => sin hojas de ruta (no devolvemos las de otro vendedor)
+    if (!resolvedId) return res.json({ data: [] });
+
     const roadmaps = await Roadmap.findAll({
-      where: { sellerId },
+      where: { sellerId: resolvedId },
       include: [
         { model: RoadmapStop, as: 'paradas' },
         { model: Seller, include: [{ model: User, attributes: ['nombreApellido', 'direccionMail', 'role'] }] }

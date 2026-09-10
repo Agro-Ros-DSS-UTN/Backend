@@ -41,6 +41,10 @@ const ServiceOrder = sequelize.define('ServiceOrder', {
     type: DataTypes.STRING(150),
     allowNull: false
   },
+  silo: {
+    type: DataTypes.STRING(200),
+    allowNull: true
+  },
   direccion: {
     type: DataTypes.STRING(255),
     allowNull: true

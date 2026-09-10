@@ -11,9 +11,11 @@ export const getAllPromotions = async (req, res, next) => {
 
 export const createPromotion = async (req, res, next) => {
   try {
-    const { nombre, descripcion, fechaInicio, fechaFin, condiciones } = req.body;
+    const { nombre, beneficio, color, descripcion, fechaInicio, fechaFin, condiciones } = req.body;
     const newPromo = await Promotion.create({
       nombre: nombre || 'Promoción Campaña',
+      beneficio: beneficio || 'Oferta Exclusiva',
+      color: color || null,
       descripcion: descripcion || '',
       fechaInicio: fechaInicio || new Date(),
       fechaFin: fechaFin || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
