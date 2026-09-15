@@ -2,6 +2,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
+// Evaluación de Servicio digital — vinculada 1:1 a una Orden de Servicio existente.
 const ServiceEvaluation = sequelize.define('ServiceEvaluation', {
   id: {
     type: DataTypes.INTEGER,
@@ -17,48 +18,50 @@ const ServiceEvaluation = sequelize.define('ServiceEvaluation', {
       key: 'id'
     }
   },
-  calificacion: {
-    type: DataTypes.INTEGER,
+  fechaEvaluacion: {
+    type: DataTypes.DATEONLY,
     allowNull: false,
-    defaultValue: 5
+    defaultValue: DataTypes.NOW
   },
-  conformidad: {
+  estadoCereal: {
+    type: DataTypes.STRING(5),
+    allowNull: false,
+    defaultValue: 'A' // 'A' | 'B' | 'C'
+  },
+  lugarToma: {
+    type: DataTypes.STRING(150),
+    allowNull: false,
+    defaultValue: 'Superficie'
+  },
+  resultado: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    defaultValue: 'Conforme'
+    defaultValue: 'Sin insectos vivos'
+    // 'Sin insectos vivos' | 'Con insectos vivos' | 'Seguimiento' | 'Refumigación'
   },
-  cumplimientoEPP: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
+  ppmPH3: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
   },
-  puntualidad: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  limpiezaArea: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  observacionesTecnicas: {
+  observaciones: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  responsableReceptor: {
-    type: DataTypes.STRING(150),
-    allowNull: false
-  },
-  dniReceptor: {
-    type: DataTypes.STRING(30),
+  recomendaciones: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
-  cargoReceptor: {
-    type: DataTypes.STRING(100),
-    allowNull: true
+  fotos: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // JSON array de imágenes en base64
   },
-  fechaEvaluacion: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW
+  firmaCliente: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // imagen de firma digital en base64
+  },
+  firmaTecnico: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // imagen de firma digital en base64 (obligatoria a nivel de UI)
   }
 }, {
   tableName: 'evaluaciones_servicio',

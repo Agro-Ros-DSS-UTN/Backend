@@ -65,6 +65,9 @@ export const createServiceOrder = asyncHandler(async (req, res) => {
     estado,
     tecnicoAplicador,
     observacionesOrden,
+    recomendaciones,
+    firmaTecnico,
+    firmaCliente,
     productosAplicados
   } = req.body;
 
@@ -93,7 +96,10 @@ export const createServiceOrder = asyncHandler(async (req, res) => {
       tipoTrabajo: tipoTrabajo || 'Fumigación de Silo',
       estado: estado || 'Programada',
       tecnicoAplicador,
-      observacionesOrden
+      observacionesOrden,
+      recomendaciones: recomendaciones || null,
+      firmaTecnico: firmaTecnico || null,
+      firmaCliente: firmaCliente || null
     }, { transaction });
 
     if (Array.isArray(productosAplicados) && productosAplicados.length > 0) {
@@ -159,6 +165,9 @@ export const updateServiceOrder = asyncHandler(async (req, res) => {
     estado,
     tecnicoAplicador,
     observacionesOrden,
+    recomendaciones,
+    firmaTecnico,
+    firmaCliente,
     productosAplicados
   } = req.body;
 
@@ -181,7 +190,10 @@ export const updateServiceOrder = asyncHandler(async (req, res) => {
       tipoTrabajo: tipoTrabajo ?? order.tipoTrabajo,
       estado: estado ?? order.estado,
       tecnicoAplicador: tecnicoAplicador ?? order.tecnicoAplicador,
-      observacionesOrden: observacionesOrden ?? order.observacionesOrden
+      observacionesOrden: observacionesOrden ?? order.observacionesOrden,
+      recomendaciones: recomendaciones !== undefined ? recomendaciones : order.recomendaciones,
+      firmaTecnico: firmaTecnico !== undefined ? firmaTecnico : order.firmaTecnico,
+      firmaCliente: firmaCliente !== undefined ? firmaCliente : order.firmaCliente
     }, { transaction });
 
     if (Array.isArray(productosAplicados)) {
@@ -239,15 +251,16 @@ export const saveServiceEvaluation = asyncHandler(async (req, res) => {
   }
 
   const {
-    calificacion,
-    conformidad,
-    cumplimientoEPP,
-    puntualidad,
-    limpiezaArea,
-    observacionesTecnicas,
-    responsableReceptor,
-    dniReceptor,
-    cargoReceptor
+    fechaEvaluacion,
+    estadoCereal,
+    lugarToma,
+    resultado,
+    ppmPH3,
+    observaciones,
+    recomendaciones,
+    fotos,
+    firmaCliente,
+    firmaTecnico
   } = req.body;
 
   let evaluation = await ServiceEvaluation.findOne({
@@ -256,16 +269,16 @@ export const saveServiceEvaluation = asyncHandler(async (req, res) => {
 
   const payload = {
     ordenServicioId: order.id,
-    calificacion: calificacion ?? 5,
-    conformidad: conformidad || 'Conforme',
-    cumplimientoEPP: cumplimientoEPP !== undefined ? Boolean(cumplimientoEPP) : true,
-    puntualidad: puntualidad !== undefined ? Boolean(puntualidad) : true,
-    limpiezaArea: limpiezaArea !== undefined ? Boolean(limpiezaArea) : true,
-    observacionesTecnicas: observacionesTecnicas || '',
-    responsableReceptor: responsableReceptor || 'Receptor en Planta',
-    dniReceptor: dniReceptor || '',
-    cargoReceptor: cargoReceptor || 'Encargado',
-    fechaEvaluacion: new Date()
+    fechaEvaluacion: fechaEvaluacion || new Date().toISOString().slice(0, 10),
+    estadoCereal: estadoCereal || 'A',
+    lugarToma: lugarToma || 'Superficie',
+    resultado: resultado || 'Sin insectos vivos',
+    ppmPH3: (ppmPH3 !== undefined && ppmPH3 !== null && ppmPH3 !== '') ? Number(ppmPH3) : null,
+    observaciones: observaciones || null,
+    recomendaciones: recomendaciones || null,
+    fotos: Array.isArray(fotos) ? JSON.stringify(fotos) : (fotos || null),
+    firmaCliente: firmaCliente || null,
+    firmaTecnico: firmaTecnico || null
   };
 
   if (evaluation) {

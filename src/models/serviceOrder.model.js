@@ -74,6 +74,18 @@ const ServiceOrder = sequelize.define('ServiceOrder', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  recomendaciones: {
+    type: DataTypes.TEXT,
+    allowNull: true // "Recomendaciones especiales para el Cliente" del acta impresa
+  },
+  firmaTecnico: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // imagen de firma digital en base64 (opcional)
+  },
+  firmaCliente: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // imagen de firma digital en base64 (opcional)
+  },
   fechaCreacion: {
     type: DataTypes.DATE,
     allowNull: false,
