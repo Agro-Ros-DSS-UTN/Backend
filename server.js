@@ -96,7 +96,7 @@ async function startServer() {
       console.log(`API corriendo en http://localhost:${port}`)
     })
   } catch (error) {
-    console.error('❌ ERROR CRÍTICO al conectar la base de datos:', error)
+    console.error("❌ ERROR CRÍTICO al conectar la base de datos:", error.original ? error.original : error)
     process.exit(1)
   }
 }
