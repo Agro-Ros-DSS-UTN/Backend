@@ -87,7 +87,7 @@ app.use(errorHandler)
 
 async function startServer() {
   try {
-    await sequelize.sync({ alter: true })
+    await sequelize.sync()
     console.log('---------------------------------------------------------')
     console.log('     ¡Conexión a MySQL exitosa y tablas sincronizadas!  ')
     console.log('---------------------------------------------------------')
