@@ -27,8 +27,9 @@ const ClientCompany = sequelize.define('ClientCompany', {
   },
   cuit: {
     type: DataTypes.STRING(20),
-    allowNull: false,
-    unique: true
+    allowNull: false
+    // Sin `unique` a propósito: una región o subsede comparte el CUIT de su
+    // empresa madre (misma entidad legal), ver `parentCompanyId`/`nivelEmpresa`.
   },
   proveedorActual: {
     type: DataTypes.STRING(150),
@@ -48,8 +49,28 @@ const ClientCompany = sequelize.define('ClientCompany', {
   references: {
     model: 'localidades',
   }
-}
+},
+  // Quién registró la empresa (admin o vendedor) — idUser del usuario,
+  // mismo patrón liviano que `creadoPorId` en Roadmap/Task (sin FK estricta).
+  creadoPorId: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
 
+  // ── Jerarquía de empresas (Empresa Madre → Región → Subsede) ──
+  // Patrón estándar de CRM (ej. "Account Hierarchy" de Salesforce): cada
+  // nivel es una fila más de ClientCompany, auto-referenciada por
+  // `parentCompanyId`. Los "encargados" de cada nivel son Contactos
+  // (Client) comunes, vinculados vía el `clientCompanyId` que ya existía.
+  parentCompanyId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  nivelEmpresa: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'independiente' // 'independiente' | 'madre' | 'region' | 'subsede'
+  }
 
 }, {
   tableName: 'empresas_clientes',

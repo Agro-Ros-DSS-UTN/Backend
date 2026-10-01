@@ -39,6 +39,10 @@ UserPhone.belongsTo(User, { foreignKey: 'idUser' });
 ClientCompany.hasMany(Client, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
 Client.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
 
+// Jerarquía de empresas: Empresa Madre -> Región -> Subsede (auto-referencia)
+ClientCompany.hasMany(ClientCompany, { as: 'hijos', foreignKey: 'parentCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+ClientCompany.belongsTo(ClientCompany, { as: 'empresaMadre', foreignKey: 'parentCompanyId' });
+
 // Relación Localidad -> Cliente (1..n)
 Locality.hasMany(Client, { foreignKey: 'localityCodPostal', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 Client.belongsTo(Locality, { foreignKey: 'localityCodPostal' });

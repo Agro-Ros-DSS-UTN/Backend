@@ -3,6 +3,7 @@ import ClientCompany from '../models/clientCompany.model.js';
 import Locality from '../models/locality.model.js';
 import Client from '../models/client.model.js';
 import ClientPhone from '../models/clientPhone.model.js';
+import User from '../models/user.model.js';
 
 // Obtener todas las empresas clientes
 export const getClientCompany = async (req, res) => {
@@ -21,14 +22,88 @@ export const getClientCompany = async (req, res) => {
       ]
     });
 
+    // Adjunta el nombre de quién registró cada empresa (sin FK estricta,
+    // igual que `creadoPorId` en Roadmap/Task — se resuelve a mano).
+    const creadores = await User.findAll({ attributes: ['idUser', 'nombreApellido', 'role'] });
+    const creadoresMap = new Map(creadores.map((u) => [u.idUser, u]));
+    const empresasConCreador = empresas.map((e) => {
+      const plain = e.toJSON();
+      const creador = plain.creadoPorId ? creadoresMap.get(plain.creadoPorId) : null;
+      plain.creadoPorNombre = creador?.nombreApellido || null;
+      plain.creadoPorRole = creador?.role || null;
+      return plain;
+    });
+
     return res.status(200).json({
       ok: true,
-      data: empresas
+      data: empresasConCreador
     });
   } catch (error) {
     return res.status(500).json({
       ok: false,
       message: 'Error al obtener el listado de empresas clientes',
+      error: error.message
+    });
+  }
+};
+
+// Árbol jerárquico de una empresa madre: ella misma + sus regiones + las
+// subsedes de cada región, con los contactos (encargados) de cada nivel.
+// Usado por la vista "Inspeccionar" del buscador / ficha de empresa.
+export const getClientCompanyTree = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const root = await ClientCompany.findByPk(id, {
+      include: [{ model: Locality }, { model: Client }]
+    });
+    if (!root) {
+      return res.status(404).json({ ok: false, message: 'Empresa no encontrada' });
+    }
+
+    // Si pidieron el árbol de una subsede o región, subimos hasta la madre
+    // real para devolver siempre la jerarquía completa.
+    let topId = root.id;
+    let cursor = root;
+    while (cursor.parentCompanyId) {
+      cursor = await ClientCompany.findByPk(cursor.parentCompanyId);
+      if (!cursor) break;
+      topId = cursor.id;
+    }
+
+    const madre = await ClientCompany.findByPk(topId, {
+      include: [{ model: Locality }, { model: Client }]
+    });
+
+    const regiones = await ClientCompany.findAll({
+      where: { parentCompanyId: topId },
+      include: [{ model: Locality }, { model: Client }],
+      order: [['nombreEmpresa', 'ASC']]
+    });
+
+    const regionIds = regiones.map((r) => r.id);
+    const subsedes = regionIds.length
+      ? await ClientCompany.findAll({
+          where: { parentCompanyId: regionIds },
+          include: [{ model: Locality }, { model: Client }],
+          order: [['nombreEmpresa', 'ASC']]
+        })
+      : [];
+
+    const tree = {
+      ...madre.toJSON(),
+      regiones: regiones.map((r) => ({
+        ...r.toJSON(),
+        subsedes: subsedes.filter((s) => s.parentCompanyId === r.id).map((s) => s.toJSON())
+      }))
+    };
+
+    return res.status(200).json({ ok: true, data: tree });
+  } catch (error) {
+    console.error('Error al armar el árbol de empresa:', error);
+    return res.status(500).json({
+      ok: false,
+      message: 'Error al obtener la estructura de la empresa',
       error: error.message
     });
   }
@@ -47,6 +122,9 @@ export const createClientCompany = async (req, res) => {
       superficieHa,
       proveedorActual,
       descEmpresa,
+      creadoPorId,
+      parentCompanyId,
+      nivelEmpresa,
       existingContactNumDoc,
       newContact
     } = req.body;
@@ -78,7 +156,10 @@ export const createClientCompany = async (req, res) => {
       proveedorActual: proveedorActual || null,
       superficieHa: superficieHa ? Number(superficieHa) : null,
       tipoEmpresa: tipoEmpresa || 'Productor',
-      localityCodPostal: postalCode
+      localityCodPostal: postalCode,
+      creadoPorId: creadoPorId || req.user?.idUser || null,
+      parentCompanyId: parentCompanyId || null,
+      nivelEmpresa: nivelEmpresa || 'independiente'
     });
 
     let linkedContact = null;
@@ -155,7 +236,8 @@ export const updateClientCompany = async (req, res) => {
       localityCodPostal,
       superficieHa,
       proveedorActual,
-      descEmpresa
+      descEmpresa,
+      creadoPorId
     } = req.body;
 
     const company = await ClientCompany.findByPk(id);
@@ -181,7 +263,8 @@ export const updateClientCompany = async (req, res) => {
       localityCodPostal: localityCodPostal !== undefined ? String(localityCodPostal) : company.localityCodPostal,
       superficieHa: superficieHa !== undefined ? Number(superficieHa) : company.superficieHa,
       proveedorActual: proveedorActual !== undefined ? proveedorActual : company.proveedorActual,
-      descEmpresa: descEmpresa !== undefined ? descEmpresa : company.descEmpresa
+      descEmpresa: descEmpresa !== undefined ? descEmpresa : company.descEmpresa,
+      creadoPorId: creadoPorId !== undefined ? creadoPorId : company.creadoPorId
     });
 
     return res.status(200).json({

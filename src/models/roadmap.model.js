@@ -20,6 +20,18 @@ const Roadmap = sequelize.define('Roadmap', {
     type: DataTypes.DATEONLY,
     allowNull: false
   },
+  horaRuta: {
+    type: DataTypes.STRING(20),
+    allowNull: true // hora de inicio propuesta, ej "09:00"
+  },
+  fechaFinPropuesta: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  horaFinPropuesta: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
   fechaNota: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
@@ -29,9 +41,16 @@ const Roadmap = sequelize.define('Roadmap', {
     allowNull: false,
     defaultValue: 'planificada' // 'planificada' | 'en_curso' | 'finalizada'
   },
+  // La persona asignada puede ser un admin O un vendedor (User.idUser real).
+  // sellerId se mantiene por compatibilidad con las consultas "mis rutas"
+  // existentes y se autocompleta cuando el asignado es un vendedor.
+  idUserAsignado: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
   sellerId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
   creadoPorId: {
     type: DataTypes.INTEGER,
@@ -44,6 +63,15 @@ const Roadmap = sequelize.define('Roadmap', {
   },
   observaciones: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  // Ciclo de vida real (distinto de la planificación de arriba)
+  fechaHoraInicioReal: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  fechaHoraFinReal: {
+    type: DataTypes.DATE,
     allowNull: true
   }
 }, {

@@ -49,6 +49,15 @@ const RoadmapStop = sequelize.define('RoadmapStop', {
   notas: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  url: {
+    type: DataTypes.STRING(500),
+    allowNull: true // link opcional (ej: estación de servicio, ubicación) para paradas agregadas en el camino
+  },
+  origen: {
+    type: DataTypes.STRING(30),
+    allowNull: false,
+    defaultValue: 'planificada' // 'planificada' | 'agregada_en_ruta'
   }
 }, {
   tableName: 'hoja_ruta_paradas',
