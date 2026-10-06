@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Plantilla de variables de entorno (solo uso local)
+.env.example
