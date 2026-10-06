@@ -2,34 +2,14 @@
 import Opportunity from '../models/opportunity.model.js';
 import ClientCompany from '../models/clientCompany.model.js';
 import Objective from '../models/objective.model.js';
-import Seller from '../models/seller.model.js';
 import User from '../models/user.model.js';
 import activityForm from '../models/activityForm.js';
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
 
-// Resuelve el id real de `sellers` (id numérico o idUser del vendedor). null si no existe,
-// para no violar la FK oportunidades.seller_id -> sellers.id
-const resolveSellerId = async (rawId) => {
-  if (rawId === undefined || rawId === null || rawId === '') return null;
-  try {
-    if (!isNaN(Number(rawId))) {
-      const byPk = await Seller.findByPk(Number(rawId));
-      if (byPk) return byPk.id;
-    }
-    const byUser = await Seller.findOne({ where: { idUser: String(rawId) } });
-    return byUser ? byUser.id : null;
-  } catch (_) {
-    return null;
-  }
-};
 
 const listInclude = [
   { model: ClientCompany, attributes: ['id', 'nombreEmpresa', 'descEmpresa', 'localityCodPostal'] },
-  {
-    model: Seller,
-    attributes: ['id'],
-    include: [{ model: User, attributes: ['idUser', 'nombreApellido'] }]
-  }
+  { model: User, as: 'propietarioUsuario', attributes: ['idUser', 'nombreApellido', 'role'] }
 ];
 
 // Creación de una Oportunidad / Negocio
@@ -43,13 +23,14 @@ export const createOpportunity = asyncHandler(async (req, res) => {
     tipoNegocio,
     propietario,
     contactoNombre,
+    contactoNumDoc,
+    propietarioId,
     potencialidadCliente,
     volumenPotencial,
     volumenFacturado,
     fechaInicio,
     fechaCierre,
-    clientCompanyId,
-    sellerId
+    clientCompanyId
   } = req.body;
 
   let validCompanyId = null;
@@ -67,14 +48,15 @@ export const createOpportunity = asyncHandler(async (req, res) => {
     tipoNegocio: tipoNegocio || 'Cliente nuevo',
     propietario: propietario || null,
     contactoNombre: contactoNombre || null,
+    contactoNumDoc: contactoNumDoc || null,
+    propietarioId: propietarioId || null,
     potencialidadCliente: potencialidadCliente || 'Media',
     volumenPotencial: volumenPotencial ? Number(volumenPotencial) : 0,
     volumenFacturado: volumenFacturado ? Number(volumenFacturado) : 0,
     fechaInicio: fechaInicio || new Date(),
     fechaCierre: fechaCierre || null,
     fechaUltimaActualizacion: new Date(),
-    clientCompanyId: validCompanyId,
-    sellerId: await resolveSellerId(sellerId)
+    clientCompanyId: validCompanyId
   });
 
   const fullOpp = await Opportunity.findByPk(newOpportunity.id, { include: listInclude });
@@ -112,7 +94,7 @@ export const getOpportunityById = asyncHandler(async (req, res) => {
     include: [
       { model: ClientCompany },
       { model: Objective, through: { attributes: [] } },
-      { model: Seller, include: [{ model: User }] },
+      { model: User, as: 'propietarioUsuario', attributes: ['idUser', 'nombreApellido', 'role'] },
       { model: activityForm }
     ]
   });
@@ -141,7 +123,8 @@ export const updateOpportunityById = asyncHandler(async (req, res) => {
 
   [
     'nombreNegocio', 'pipeline', 'etapaComercial', 'estado', 'prioridad',
-    'tipoNegocio', 'propietario', 'contactoNombre', 'potencialidadCliente', 'fechaCierre'
+    'tipoNegocio', 'propietario', 'contactoNombre', 'contactoNumDoc', 'propietarioId',
+    'potencialidadCliente', 'fechaCierre'
   ].forEach((k) => {
     if (b[k] !== undefined) patch[k] = b[k];
   });
@@ -158,9 +141,6 @@ export const updateOpportunityById = asyncHandler(async (req, res) => {
     patch.clientCompanyId = validCompanyId;
   }
 
-  if (b.sellerId !== undefined) {
-    patch.sellerId = await resolveSellerId(b.sellerId);
-  }
 
   await opportunity.update(patch);
   const fullOpp = await Opportunity.findByPk(opportunity.id, { include: listInclude });

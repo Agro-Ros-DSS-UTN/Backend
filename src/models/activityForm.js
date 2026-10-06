@@ -41,10 +41,10 @@ const FormularioActividad = sequelize.define('FormularioActividad', {
     allowNull: true,
     field: 'opportunity_id'
   },
-  sellerId: {
-    type: DataTypes.INTEGER,
+  idUser: {
+    type: DataTypes.STRING(20),
     allowNull: true,
-    field: 'seller_id'
+    field: 'id_user'
   },
   archivoAdjunto: {
     type: DataTypes.TEXT('medium'),
@@ -57,7 +57,7 @@ const FormularioActividad = sequelize.define('FormularioActividad', {
     field: 'autor_nombre'
   }
 }, {
-  tableName: 'formularios_actividad',
+  tableName: 'actividades',
   timestamps: false,
   underscored: true
 });

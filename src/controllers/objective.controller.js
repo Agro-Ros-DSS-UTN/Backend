@@ -1,43 +1,15 @@
-import { Objective, Seller, User, ClientCompany } from '../models/index.js';
+import { Objective, User, ClientCompany } from '../models/index.js';
 
 const objectiveInclude = [
-  {
-    model: Seller,
-    include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] }]
-  },
+  { model: User, as: 'vendedor', attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] },
   ClientCompany
 ];
 
-/**
- * Resuelve el id real de la tabla `sellers` a partir de:
- *  - un id numérico de seller, o
- *  - un idUser (documento del usuario vendedor).
- * Con { create: true } da de alta la fila Seller si el usuario existe.
- * Devuelve null si no se puede resolver.
- */
-const resolveSellerId = async (rawId, { create = false } = {}) => {
+// Devuelve el id_user si corresponde a un usuario existente, o null.
+const resolveUserId = async (rawId) => {
   if (rawId === undefined || rawId === null || rawId === '') return null;
-
-  if (!isNaN(Number(rawId))) {
-    const byPk = await Seller.findByPk(Number(rawId));
-    if (byPk) return byPk.id;
-  }
-
-  const byUser = await Seller.findOne({ where: { idUser: String(rawId) } });
-  if (byUser) return byUser.id;
-
-  if (create) {
-    const user = await User.findByPk(String(rawId));
-    if (user) {
-      const [seller] = await Seller.findOrCreate({
-        where: { idUser: user.idUser },
-        defaults: { zonaAsignada: 'Zona General', antiguedad: 1 }
-      });
-      return seller.id;
-    }
-  }
-
-  return null;
+  const user = await User.findByPk(String(rawId));
+  return user ? user.idUser : null;
 };
 
 export const getAllObjectives = async (req, res, next) => {
@@ -52,16 +24,14 @@ export const getAllObjectives = async (req, res, next) => {
   }
 };
 
+// GET /objectives/seller/:sellerId — el parámetro es el id_user del vendedor.
 export const getObjectivesBySeller = async (req, res, next) => {
   try {
-    const { sellerId } = req.params;
-    const resolvedId = await resolveSellerId(sellerId);
-
-    // Sin vendedor resuelto => sin objetivos (no devolvemos los de otro vendedor)
-    if (!resolvedId) return res.json([]);
+    const idUser = await resolveUserId(req.params.sellerId);
+    if (!idUser) return res.json([]);
 
     const objectives = await Objective.findAll({
-      where: { sellerId: resolvedId },
+      where: { idUser },
       include: objectiveInclude,
       order: [['id', 'DESC']]
     });
@@ -73,23 +43,11 @@ export const getObjectivesBySeller = async (req, res, next) => {
 
 export const createObjective = async (req, res, next) => {
   try {
-    const {
-      descripcion,
-      tipoObjetivo,
-      periodoSemana,
-      cantidadMeta,
-      sellerId,
-      clientCompanyId
-    } = req.body;
+    const { descripcion, tipoObjetivo, periodoSemana, cantidadMeta, idUser, sellerId, clientCompanyId } = req.body;
 
-    let targetSellerId = await resolveSellerId(sellerId, { create: true });
-    if (!targetSellerId) {
-      const firstSeller = await Seller.findOne();
-      if (firstSeller) targetSellerId = firstSeller.id;
-    }
-
-    if (!targetSellerId) {
-      return res.status(400).json({ message: 'No se encontró ningún vendedor registrado para asignar el objetivo' });
+    const targetUserId = await resolveUserId(idUser ?? sellerId);
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'Elegí un usuario existente para asignar el objetivo' });
     }
 
     const newObj = await Objective.create({
@@ -97,7 +55,7 @@ export const createObjective = async (req, res, next) => {
       tipoObjetivo: tipoObjetivo || 'Ventas',
       periodoSemana: Number(periodoSemana) || 1,
       cantidadMeta: Number(cantidadMeta) || 100,
-      sellerId: targetSellerId,
+      idUser: targetUserId,
       clientCompanyId: (clientCompanyId && !isNaN(Number(clientCompanyId))) ? Number(clientCompanyId) : null
     });
 
@@ -115,7 +73,14 @@ export const updateObjective = async (req, res, next) => {
     if (!obj) {
       return res.status(404).json({ message: 'Objetivo no encontrado' });
     }
-    await obj.update(req.body);
+
+    const patch = { ...req.body };
+    delete patch.sellerId;
+    if (req.body.idUser !== undefined || req.body.sellerId !== undefined) {
+      patch.idUser = await resolveUserId(req.body.idUser ?? req.body.sellerId);
+    }
+
+    await obj.update(patch);
     const updated = await Objective.findByPk(id, { include: objectiveInclude });
     res.json(updated);
   } catch (error) {

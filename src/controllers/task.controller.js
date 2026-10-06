@@ -1,21 +1,6 @@
 /* eslint-disable */
-import { Task, Seller, User } from '../models/index.js';
-
-// Resuelve un sellerId válido (id de la tabla sellers). Si no existe, devuelve null
-// para no violar la FK tareas.seller_id -> sellers.id.
-const resolveSellerId = async (rawSellerId) => {
-  if (rawSellerId === undefined || rawSellerId === null || rawSellerId === '') return null;
-  try {
-    if (!isNaN(Number(rawSellerId))) {
-      const byPk = await Seller.findByPk(Number(rawSellerId));
-      if (byPk) return byPk.id;
-    }
-    const byUser = await Seller.findOne({ where: { idUser: String(rawSellerId) } });
-    return byUser ? byUser.id : null;
-  } catch (_) {
-    return null;
-  }
-};
+import { Task, User, TaskAssignee, activityForm } from '../models/index.js';
+import { createCalendarEventForAssignee } from '../services/calendarIntegration.js';
 
 const buildTaskPayload = (body) => {
   const {
@@ -55,10 +40,68 @@ const buildTaskPayload = (body) => {
   };
 };
 
-const sellerInclude = {
-  model: Seller,
+const finalizadoPorInclude = {
+  model: User,
+  as: 'finalizadoPor',
   required: false,
-  include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role'] }]
+  attributes: ['idUser', 'nombreApellido', 'role']
+};
+
+const actividadInclude = {
+  model: activityForm,
+  required: false,
+  attributes: ['idFormulario', 'tipoContacto', 'empresa', 'fechaHora', 'descripcion']
+};
+
+const asignacionesInclude = {
+  model: TaskAssignee,
+  as: 'asignaciones',
+  required: false,
+  include: [{ model: User, attributes: ['idUser', 'nombreApellido', 'role', 'direccionMail'] }]
+};
+
+// Reemplaza el set de usuarios enganchados a una tarea por `idUsers` (array de
+// id_user). Crea las filas nuevas (disparando el alta en Google Calendar para
+// cada una) y borra las que ya no corresponden. Devuelve un texto plano
+// "Nombre1, Nombre2" para mantener compatibilidad con el campo `asignadoA`
+// que ya consumen las vistas en lista.
+const syncAssignees = async (task, idUsers) => {
+  if (!Array.isArray(idUsers)) return null;
+
+  const uniqueIds = [...new Set(idUsers.filter(Boolean).map(String))];
+  const existing = await TaskAssignee.findAll({ where: { taskId: task.id } });
+  const existingIds = existing.map((e) => e.idUser);
+
+  const toRemove = existing.filter((e) => !uniqueIds.includes(e.idUser));
+  const toAddIds = uniqueIds.filter((id) => !existingIds.includes(id));
+
+  if (toRemove.length > 0) {
+    await TaskAssignee.destroy({ where: { id: toRemove.map((e) => e.id) } });
+  }
+
+  const users = uniqueIds.length > 0
+    ? await User.findAll({ where: { idUser: uniqueIds } })
+    : [];
+
+  for (const idUser of toAddIds) {
+    const user = users.find((u) => u.idUser === idUser);
+    const row = await TaskAssignee.create({ taskId: task.id, idUser });
+    if (user) {
+      // Best-effort: si Google Calendar no está configurado, esto no hace nada
+      // (ver services/calendarIntegration.js) y no interrumpe el alta de la tarea.
+      const result = await createCalendarEventForAssignee(task, user);
+      if (result.success) {
+        row.calendarEventId = result.eventId;
+        await row.save();
+      }
+    }
+  }
+
+  const names = users
+    .filter((u) => uniqueIds.includes(u.idUser))
+    .map((u) => u.nombreApellido)
+    .join(', ');
+  return names || null;
 };
 
 export const createTask = async (req, res) => {
@@ -71,10 +114,14 @@ export const createTask = async (req, res) => {
       }
     }
 
-    payload.sellerId = await resolveSellerId(req.body?.sellerId);
-
     const newTask = await Task.create(payload);
-    const fullTask = await Task.findByPk(newTask.id, { include: [sellerInclude] });
+
+    if (Array.isArray(req.body?.asignadosIds) && req.body.asignadosIds.length > 0) {
+      const names = await syncAssignees(newTask, req.body.asignadosIds);
+      if (names) await newTask.update({ asignadoA: names });
+    }
+
+    const fullTask = await Task.findByPk(newTask.id, { include: [asignacionesInclude, finalizadoPorInclude, actividadInclude] });
 
     return res.status(201).json({ message: 'Tarea creada con éxito', data: fullTask });
   } catch (error) {
@@ -84,16 +131,15 @@ export const createTask = async (req, res) => {
 
 export const getAllTasks = async (req, res) => {
   try {
-    const { rol, destinatarioRol, sellerId, creadoPorRol } = req.query;
+    const { rol, destinatarioRol, creadoPorRol } = req.query;
     const where = {};
 
     if (destinatarioRol) where.destinatarioRol = destinatarioRol;
     if (creadoPorRol) where.creadoPorRol = creadoPorRol;
-    if (sellerId && !isNaN(Number(sellerId))) where.sellerId = Number(sellerId);
 
     const tasks = await Task.findAll({
       where,
-      include: [sellerInclude],
+      include: [asignacionesInclude, finalizadoPorInclude, actividadInclude],
       order: [['id', 'DESC']]
     });
 
@@ -122,16 +168,52 @@ export const updateTask = async (req, res) => {
     if (!task) return res.status(404).json({ message: 'Tarea no encontrada' });
 
     const payload = buildTaskPayload({ ...task.toJSON(), ...req.body });
-    if (req.body?.sellerId !== undefined) {
-      payload.sellerId = await resolveSellerId(req.body.sellerId);
-    }
 
     await task.update(payload);
-    const fullTask = await Task.findByPk(task.id, { include: [sellerInclude] });
+
+    if (Array.isArray(req.body?.asignadosIds)) {
+      const names = await syncAssignees(task, req.body.asignadosIds);
+      await task.update({ asignadoA: names ?? payload.asignadoA });
+    }
+
+    const fullTask = await Task.findByPk(task.id, { include: [asignacionesInclude, finalizadoPorInclude, actividadInclude] });
 
     return res.json({ message: 'Tarea actualizada con éxito', data: fullTask });
   } catch (error) {
     return res.status(500).json({ message: 'Error al actualizar la tarea', error: error.message });
+  }
+};
+
+const isFinalEstado = (estado) => /finaliz|complet/i.test(String(estado || ''));
+
+// Un vendedor solo puede finalizar tareas en las que está asociado; un admin puede finalizar cualquiera.
+const canFinalize = async (task, user) => {
+  if (!user) return false;
+  if (String(user.role || '').toLowerCase() === 'admin') return true;
+  const linked = await TaskAssignee.findOne({ where: { taskId: task.id, idUser: user.idUser } });
+  return Boolean(linked);
+};
+
+export const finalizeTask = async (req, res) => {
+  try {
+    const task = await Task.findByPk(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Tarea no encontrada' });
+    if (isFinalEstado(task.estado)) {
+      return res.status(400).json({ message: 'La tarea ya está finalizada' });
+    }
+    if (!(await canFinalize(task, req.user))) {
+      return res.status(403).json({ code: 'FORBIDDEN_ACTION', message: 'No tiene acceso a finalizar dicha tarea' });
+    }
+
+    await task.update({
+      estado: 'Finalizada',
+      finalizadoPorId: req.user.idUser,
+      fechaFinalizacion: new Date(),
+    });
+    const fullTask = await Task.findByPk(task.id, { include: [asignacionesInclude, finalizadoPorInclude, actividadInclude] });
+    return res.json({ message: 'Tarea finalizada', data: fullTask });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al finalizar la tarea', error: error.message });
   }
 };
 
@@ -142,7 +224,10 @@ export const updateTaskStatus = async (req, res) => {
     const task = await Task.findByPk(id);
     if (!task) return res.status(404).json({ message: 'Tarea no encontrada' });
 
-    await task.update({ estado });
+    // Finalizar siempre pasa por el control de permisos.
+    if (isFinalEstado(estado)) return finalizeTask(req, res);
+
+    await task.update({ estado, finalizadoPorId: null, fechaFinalizacion: null });
     return res.json({ message: 'Estado de tarea actualizado', data: task });
   } catch (error) {
     return res.status(500).json({ message: 'Error al actualizar tarea', error: error.message });

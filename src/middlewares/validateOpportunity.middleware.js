@@ -1,6 +1,5 @@
 /* eslint-disable */
 import ClientCompany from '../models/clientCompany.model.js';
-import Seller from '../models/seller.model.js';
 
 // Usado en: POST /opportunities (createOpportunity)
 export const validateCreateOpportunity = async (req, res, next) => {
@@ -11,6 +10,10 @@ export const validateCreateOpportunity = async (req, res, next) => {
       return res.status(400).json({
         message: 'El nombre del negocio es obligatorio'
       });
+    }
+
+    if (!req.body.fechaCierre) {
+      return res.status(400).json({ message: 'La fecha de cierre es obligatoria' });
     }
 
     // La empresa y el vendedor son opcionales; el controlador resuelve/omite
@@ -29,22 +32,13 @@ export const validateCreateOpportunity = async (req, res, next) => {
 // Solo valida EmpresaCliente/Vendedor si el usuario intenta cambiarlos
 export const validateUpdateOpportunity = async (req, res, next) => {
   try {
-    const { clientCompanyId, sellerId } = req.body;
+    const { clientCompanyId } = req.body;
 
     if (clientCompanyId) {
       const clientCompany = await ClientCompany.findByPk(clientCompanyId);
       if (!clientCompany) {
         return res.status(404).json({
           message: 'La EmpresaCliente indicada no existe.'
-        });
-      }
-    }
-
-    if (sellerId) {
-      const seller = await Seller.findByPk(sellerId);
-      if (!seller) {
-        return res.status(404).json({
-          message: 'El Vendedor indicado no existe.'
         });
       }
     }

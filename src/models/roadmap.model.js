@@ -42,14 +42,8 @@ const Roadmap = sequelize.define('Roadmap', {
     defaultValue: 'planificada' // 'planificada' | 'en_curso' | 'finalizada'
   },
   // La persona asignada puede ser un admin O un vendedor (User.idUser real).
-  // sellerId se mantiene por compatibilidad con las consultas "mis rutas"
-  // existentes y se autocompleta cuando el asignado es un vendedor.
   idUserAsignado: {
     type: DataTypes.STRING(20),
-    allowNull: true
-  },
-  sellerId: {
-    type: DataTypes.INTEGER,
     allowNull: true
   },
   creadoPorId: {

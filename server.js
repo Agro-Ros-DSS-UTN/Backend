@@ -1,7 +1,8 @@
 ﻿/* eslint-disable */
 import express from 'express'
 import cors from 'cors'
-import { 
+import cron from 'node-cron'
+import {
   sequelize, 
   Client, 
   Opportunity, 
@@ -27,6 +28,7 @@ import targetRoutes from './src/routes/objective.route.js'
 import promotionRoutes from './src/routes/promotion.route.js'
 import employeeRoutes from './src/routes/employee.route.js'
 import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
+import { runTaskReminderSweep } from './src/jobs/taskReminders.job.js'
 
 const port = process.env.PORT || 3000
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -64,7 +66,7 @@ app.get('/dashboard', async (req, res, next) => {
       Client ? Client.findAll() : [],
       Opportunity ? Opportunity.findAll() : [],
       activityForm ? activityForm.findAll() : [],
-      User ? User.findAll({ where: { role: 'vendedor' } }) : [],
+      User ? User.findAll({ where: { role: 'vendedor' }, attributes: { exclude: ['password', 'profileImage'] } }) : [],
       ProductLine ? ProductLine.findAll() : []
     ]);
 
@@ -94,6 +96,14 @@ async function startServer() {
 
     app.listen(port, () => {
       console.log(`API corriendo en http://localhost:${port}`)
+    })
+
+    // Recordatorios de tareas (48hs/24hs antes del vencimiento, por mail +
+    // Google Calendar si están configurados — ver src/services/*). Corre una
+    // vez al arrancar y después cada 30 minutos; nunca tira abajo el server.
+    runTaskReminderSweep().catch((err) => console.error('[taskReminders] Error en el barrido inicial:', err.message))
+    cron.schedule('*/30 * * * *', () => {
+      runTaskReminderSweep().catch((err) => console.error('[taskReminders] Error en el barrido programado:', err.message))
     })
   } catch (error) {
     console.error("❌ ERROR CRÍTICO al conectar la base de datos:", error.original ? error.original : error)

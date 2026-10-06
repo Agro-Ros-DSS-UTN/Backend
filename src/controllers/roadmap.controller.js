@@ -1,9 +1,7 @@
 ﻿/* eslint-disable */
-import { Op } from 'sequelize';
-import Roadmap from '../models/roadmap.model.js';
-import RoadmapStop from '../models/roadmapStop.model.js';
-import Seller from '../models/seller.model.js';
-import User from '../models/user.model.js';
+import { Roadmap, RoadmapStop, User } from '../models/index.js';
+
+const asignadoInclude = { model: User, as: 'asignado', attributes: ['idUser', 'nombreApellido', 'direccionMail', 'role'] };
 
 export const createRoadmap = async (req, res) => {
   try {
@@ -28,31 +26,8 @@ export const createRoadmap = async (req, res) => {
     }
 
     // La persona asignada puede ser cualquier usuario (admin o vendedor).
-    // Si además es vendedor, se resuelve/crea también su fila en `vendedores`
-    // para que las consultas históricas "por vendedor" lo sigan encontrando.
     const rawAssignee = idUserAsignado || sellerId;
-    let resolvedUser = null;
-    let validSellerId = null;
-
-    if (rawAssignee) {
-      resolvedUser = await User.findByPk(String(rawAssignee));
-
-      if (!resolvedUser && !isNaN(Number(rawAssignee))) {
-        const sellerByPk = await Seller.findByPk(Number(rawAssignee));
-        if (sellerByPk) {
-          validSellerId = sellerByPk.id;
-          resolvedUser = await User.findByPk(sellerByPk.idUser);
-        }
-      }
-    }
-
-    if (resolvedUser && (resolvedUser.role || '').toLowerCase() === 'vendedor' && !validSellerId) {
-      const [existingSeller] = await Seller.findOrCreate({
-        where: { idUser: resolvedUser.idUser },
-        defaults: { zonaAsignada: nombreZona || 'Zona General', antiguedad: 1 }
-      });
-      validSellerId = existingSeller.id;
-    }
+    const resolvedUser = rawAssignee ? await User.findByPk(String(rawAssignee)) : null;
 
     if (!resolvedUser) {
       return res.status(400).json({ message: 'No se encontró el usuario asignado para esta hoja de ruta' });
@@ -66,7 +41,6 @@ export const createRoadmap = async (req, res) => {
       fechaFinPropuesta: fechaFinPropuesta || null,
       horaFinPropuesta: horaFinPropuesta || null,
       idUserAsignado: resolvedUser.idUser,
-      sellerId: validSellerId,
       creadoPorId: creadoPorId || null,
       distanciaEstimadaKm: Number(distanciaEstimadaKm) || 0,
       observaciones: observaciones || null,
@@ -106,63 +80,13 @@ export const createRoadmap = async (req, res) => {
   }
 };
 
-// Resuelve el id real de `sellers` desde un id numérico o desde el idUser del vendedor.
-const resolveSellerId = async (rawId) => {
-  if (rawId === undefined || rawId === null || rawId === '') return null;
-  if (!isNaN(Number(rawId))) {
-    const byPk = await Seller.findByPk(Number(rawId));
-    if (byPk) return byPk.id;
-  }
-  const byUser = await Seller.findOne({ where: { idUser: String(rawId) } });
-  return byUser ? byUser.id : null;
-};
-
-export const getRoadmapsBySeller = async (req, res) => {
-  try {
-    const { sellerId } = req.params;
-    const resolvedId = await resolveSellerId(sellerId);
-
-    // Sin vendedor resuelto => sin hojas de ruta (no devolvemos las de otro vendedor)
-    if (!resolvedId) return res.json({ data: [] });
-
-    const roadmaps = await Roadmap.findAll({
-      where: { sellerId: resolvedId },
-      include: [
-        { model: RoadmapStop, as: 'paradas' },
-        { model: Seller, include: [{ model: User, attributes: ['nombreApellido', 'direccionMail', 'role'] }] }
-      ],
-      order: [['fechaRuta', 'DESC']]
-    });
-    return res.json({ data: roadmaps });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error al obtener hojas de ruta', error: error.message });
-  }
-};
-
-// Hojas de ruta asignadas a un usuario puntual (admin o vendedor) — a
-// diferencia de getRoadmapsBySeller, no depende de que exista una fila en
-// `vendedores`, así que sirve también para hojas de ruta de administradores.
-//
-// También matchea por `sellerId` (vía la fila `vendedores` del usuario) para
-// no perder las hojas de ruta creadas ANTES de que existiera `idUserAsignado`
-// — esas quedaron con `idUserAsignado: null` y solo tienen `sellerId` seteado.
+// Hojas de ruta asignadas a un usuario puntual (admin o vendedor).
 export const getRoadmapsByUser = async (req, res) => {
   try {
-    const { idUser } = req.params;
-
-    const where = { idUserAsignado: idUser };
-    const legacySeller = await Seller.findOne({ where: { idUser: String(idUser) } });
-    if (legacySeller) {
-      where[Op.or] = [{ idUserAsignado: idUser }, { sellerId: legacySeller.id }];
-      delete where.idUserAsignado;
-    }
-
+    const idUser = req.params.idUser ?? req.params.sellerId;
     const roadmaps = await Roadmap.findAll({
-      where,
-      include: [
-        { model: RoadmapStop, as: 'paradas' },
-        { model: Seller, include: [{ model: User, attributes: ['nombreApellido', 'direccionMail', 'role'] }] }
-      ],
+      where: { idUserAsignado: String(idUser) },
+      include: [{ model: RoadmapStop, as: 'paradas' }, asignadoInclude],
       order: [['fechaRuta', 'DESC']]
     });
     return res.json({ data: roadmaps });
@@ -171,12 +95,15 @@ export const getRoadmapsByUser = async (req, res) => {
   }
 };
 
+// Ruta histórica /roadmaps/seller/:sellerId — el parámetro ahora es el id_user.
+export const getRoadmapsBySeller = getRoadmapsByUser;
+
 export const getAllRoadmaps = async (req, res) => {
   try {
     const roadmaps = await Roadmap.findAll({
       include: [
         { model: RoadmapStop, as: 'paradas' },
-        { model: Seller, include: [{ model: User, attributes: ['nombreApellido', 'direccionMail', 'role'] }] }
+        asignadoInclude
       ],
       order: [['fechaRuta', 'DESC']]
     });
@@ -192,7 +119,7 @@ export const getRoadmapById = async (req, res) => {
     const roadmap = await Roadmap.findByPk(id, {
       include: [
         { model: RoadmapStop, as: 'paradas' },
-        { model: Seller, include: [{ model: User, attributes: ['nombreApellido', 'direccionMail', 'role'] }] }
+        asignadoInclude
       ]
     });
     if (!roadmap) {
@@ -296,18 +223,8 @@ export const addAdHocStop = async (req, res) => {
   }
 };
 
-// Resuelve el usuario real asignado a una hoja de ruta, soportando tanto el
-// campo nuevo (`idUserAsignado`) como el viejo (`sellerId` → `vendedores`).
-const resolveAssignedUser = async (roadmap) => {
-  if (roadmap.idUserAsignado) {
-    return User.findByPk(roadmap.idUserAsignado);
-  }
-  if (roadmap.sellerId) {
-    const seller = await Seller.findByPk(roadmap.sellerId);
-    if (seller) return User.findByPk(seller.idUser);
-  }
-  return null;
-};
+const resolveAssignedUser = async (roadmap) =>
+  roadmap.idUserAsignado ? User.findByPk(roadmap.idUserAsignado) : null;
 
 // Permisos de borrado:
 //  - Vendedor: solo sus propias hojas de ruta.

@@ -68,11 +68,17 @@ const Task = sequelize.define('Task', {
   estado: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    defaultValue: 'Pendiente' // 'Pendiente' | 'En progreso' | 'Completada' | 'Cancelada'
+    defaultValue: 'Pendiente' // 'Pendiente' | 'Finalizada'
   },
-  sellerId: {
-    type: DataTypes.INTEGER,
-    allowNull: true
+  finalizadoPorId: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    field: 'finalizado_por_id'
+  },
+  fechaFinalizacion: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'fecha_finalizacion'
   },
   formularioActividadId: {
     type: DataTypes.INTEGER,

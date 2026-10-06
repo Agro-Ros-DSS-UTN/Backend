@@ -23,6 +23,10 @@ const Objective = sequelize.define('Objective', {
   cantidadMeta: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true
+  },
+  idUser: {
+    type: DataTypes.STRING(20),
+    allowNull: true
   }
 }, {
   tableName: 'objetivos',

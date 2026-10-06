@@ -42,6 +42,16 @@ const Opportunity = sequelize.define('Opportunity', {
     type: DataTypes.STRING(150),
     allowNull: true
   },
+  contactoNumDoc: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    field: 'contacto_num_doc'
+  },
+  propietarioId: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    field: 'propietario_id'
+  },
   potencialidadCliente: {
     type: DataTypes.STRING(50),
     allowNull: true
@@ -66,13 +76,9 @@ const Opportunity = sequelize.define('Opportunity', {
   fechaUltimaActualizacion: {
     type: DataTypes.DATE,
     allowNull: true
-  },
-  sellerId: {
-    type: DataTypes.INTEGER,
-    allowNull: true
   }
 }, {
-  tableName: 'oportunidades',
+  tableName: 'negocios',
   timestamps: false
 });
 
