@@ -39,7 +39,7 @@ const ServiceOrder = sequelize.define('ServiceOrder', {
   },
   plantaNombre: {
     type: DataTypes.STRING(150),
-    allowNull: false
+    allowNull: true
   },
   silo: {
     type: DataTypes.STRING(200),
@@ -85,6 +85,10 @@ const ServiceOrder = sequelize.define('ServiceOrder', {
   firmaCliente: {
     type: DataTypes.TEXT('long'),
     allowNull: true // imagen de firma digital en base64 (opcional)
+  },
+  imagenOrdenOriginal: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // foto/escaneo de la orden de servicio en papel (base64, opcional)
   },
   fechaCreacion: {
     type: DataTypes.DATE,

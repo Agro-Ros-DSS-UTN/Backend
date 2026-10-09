@@ -6,7 +6,7 @@ const buildPayload = (b = {}) => ({
   nombreApellido: b.nombreApellido,
   dni: b.dni || null,
   matricula: b.matricula || null,
-  puesto: b.puesto || 'Operario',
+  puesto: String(b.puesto || '').trim() || null,
   telefono: b.telefono || null,
   email: b.email || null,
   empresa: b.empresa || null,
@@ -15,6 +15,16 @@ const buildPayload = (b = {}) => ({
   profileImage: b.profileImage !== undefined ? b.profileImage : null,
   observaciones: b.observaciones || null
 });
+
+// Campos obligatorios del legajo: nombre, DNI, matrícula y puesto.
+const missingRequired = (b = {}) => {
+  const faltan = [];
+  if (!String(b.nombreApellido || '').trim()) faltan.push('nombre y apellido');
+  if (!String(b.dni || '').trim()) faltan.push('DNI');
+  if (!String(b.matricula || '').trim()) faltan.push('matrícula');
+  if (!String(b.puesto || '').trim()) faltan.push('puesto');
+  return faltan;
+};
 
 export const getAllEmployees = asyncHandler(async (req, res) => {
   const employees = await Employee.findAll({ order: [['nombreApellido', 'ASC']] });
@@ -28,8 +38,9 @@ export const getEmployeeById = asyncHandler(async (req, res) => {
 });
 
 export const createEmployee = asyncHandler(async (req, res) => {
-  if (!req.body?.nombreApellido) {
-    return res.status(400).json({ message: 'El nombre y apellido del empleado es obligatorio' });
+  const faltan = missingRequired(req.body);
+  if (faltan.length) {
+    return res.status(400).json({ message: `Faltan campos obligatorios: ${faltan.join(', ')}` });
   }
   const employee = await Employee.create(buildPayload(req.body));
   return res.status(201).json({ message: 'Empleado registrado exitosamente', data: employee });
@@ -40,6 +51,10 @@ export const updateEmployee = asyncHandler(async (req, res) => {
   if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
   const current = employee.toJSON();
+  const faltan = missingRequired({ ...current, ...req.body });
+  if (faltan.length) {
+    return res.status(400).json({ message: `Faltan campos obligatorios: ${faltan.join(', ')}` });
+  }
   await employee.update(buildPayload({ ...current, ...req.body }));
   return res.status(200).json({ message: 'Empleado actualizado exitosamente', data: employee });
 });

@@ -136,7 +136,14 @@ export const createClientCompany = async (req, res) => {
       });
     }
 
-    const postalCode = localityCodPostal ? String(localityCodPostal) : '2170';
+    // Si llega el nombre de la localidad sin código postal, se busca por nombre
+    // entre las localidades cargadas antes de caer en el código por defecto.
+    let postalCode = localityCodPostal ? String(localityCodPostal) : null;
+    if (!postalCode && localidad && localidad.trim()) {
+      const byName = await Locality.findOne({ where: { nomLocalidad: localidad.trim() } });
+      if (byName) postalCode = String(byName.codPostal);
+    }
+    postalCode = postalCode || '2170';
 
     // Asegurar que la localidad exista en la base de datos para no violar la FK
     await Locality.findOrCreate({
@@ -237,12 +244,18 @@ export const updateClientCompany = async (req, res) => {
       superficieHa,
       proveedorActual,
       descEmpresa,
-      creadoPorId
+      creadoPorId,
+      parentCompanyId,
+      nivelEmpresa
     } = req.body;
 
     const company = await ClientCompany.findByPk(id);
     if (!company) {
       return res.status(404).json({ ok: false, message: 'Empresa no encontrada' });
+    }
+
+    if (parentCompanyId && String(parentCompanyId) === String(id)) {
+      return res.status(400).json({ ok: false, message: 'Una empresa no puede ser su propia empresa principal.' });
     }
 
     if (localityCodPostal) {
@@ -264,7 +277,9 @@ export const updateClientCompany = async (req, res) => {
       superficieHa: superficieHa !== undefined ? Number(superficieHa) : company.superficieHa,
       proveedorActual: proveedorActual !== undefined ? proveedorActual : company.proveedorActual,
       descEmpresa: descEmpresa !== undefined ? descEmpresa : company.descEmpresa,
-      creadoPorId: creadoPorId !== undefined ? creadoPorId : company.creadoPorId
+      creadoPorId: creadoPorId !== undefined ? creadoPorId : company.creadoPorId,
+      parentCompanyId: parentCompanyId !== undefined ? (parentCompanyId || null) : company.parentCompanyId,
+      nivelEmpresa: nivelEmpresa !== undefined ? nivelEmpresa : company.nivelEmpresa
     });
 
     return res.status(200).json({

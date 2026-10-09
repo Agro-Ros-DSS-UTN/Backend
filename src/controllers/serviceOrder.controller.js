@@ -2,6 +2,25 @@
 import { ServiceOrder, ServiceOrderProduct, ServiceEvaluation, sequelize } from '../models/index.js';
 import { asyncHandler } from '../middlewares/asyncHandler.middleware.js';
 
+// Una fila del "Detalle del servicio" de la planilla (instalación + producto y dosis).
+const mapDetalleRow = (p, ordenServicioId) => ({
+  ordenServicioId,
+  tipoInstalacion: p.tipoInstalacion || null,
+  numero: p.numero || null,
+  capacidadTn: p.capacidadTn || null,
+  grano: p.grano || null,
+  cantidadTn: p.cantidadTn || null,
+  estadoCereal: p.estadoCereal || null,
+  estadoInstalaciones: p.estadoInstalaciones || null,
+  estadoInfestacion: p.estadoInfestacion || null,
+  producto: p.producto || null,
+  principioActivo: p.principioActivo || null,
+  dosis: p.dosis || null,
+  lote: p.lote || null,
+  tiempoCarencia: p.tiempoCarencia || null,
+  cantidadTotal: p.cantidadTotal || null
+});
+
 /**
  * Obtener todas las órdenes de servicio con sus productos y evaluación
  */
@@ -68,12 +87,13 @@ export const createServiceOrder = asyncHandler(async (req, res) => {
     recomendaciones,
     firmaTecnico,
     firmaCliente,
+    imagenOrdenOriginal,
     productosAplicados
   } = req.body;
 
-  if (!numeroOrden || !clienteNombre || !plantaNombre) {
+  if (!numeroOrden || !clienteNombre) {
     return res.status(400).json({
-      message: 'Faltan campos obligatorios (numeroOrden, clienteNombre, plantaNombre)'
+      message: 'Faltan campos obligatorios (numeroOrden, clienteNombre)'
     });
   }
 
@@ -99,20 +119,12 @@ export const createServiceOrder = asyncHandler(async (req, res) => {
       observacionesOrden,
       recomendaciones: recomendaciones || null,
       firmaTecnico: firmaTecnico || null,
-      firmaCliente: firmaCliente || null
+      firmaCliente: firmaCliente || null,
+      imagenOrdenOriginal: imagenOrdenOriginal || null
     }, { transaction });
 
     if (Array.isArray(productosAplicados) && productosAplicados.length > 0) {
-      const itemsToCreate = productosAplicados.map(p => ({
-        ordenServicioId: newOrder.id,
-        producto: p.producto || 'Producto Fitosanitario',
-        principioActivo: p.principioActivo || null,
-        dosis: p.dosis || null,
-        lote: p.lote || null,
-        tiempoCarencia: p.tiempoCarencia || null,
-        cantidadTotal: p.cantidadTotal || null
-      }));
-
+      const itemsToCreate = productosAplicados.map(p => mapDetalleRow(p, newOrder.id));
       await ServiceOrderProduct.bulkCreate(itemsToCreate, { transaction });
     }
 
@@ -168,6 +180,7 @@ export const updateServiceOrder = asyncHandler(async (req, res) => {
     recomendaciones,
     firmaTecnico,
     firmaCliente,
+    imagenOrdenOriginal,
     productosAplicados
   } = req.body;
 
@@ -193,7 +206,8 @@ export const updateServiceOrder = asyncHandler(async (req, res) => {
       observacionesOrden: observacionesOrden ?? order.observacionesOrden,
       recomendaciones: recomendaciones !== undefined ? recomendaciones : order.recomendaciones,
       firmaTecnico: firmaTecnico !== undefined ? firmaTecnico : order.firmaTecnico,
-      firmaCliente: firmaCliente !== undefined ? firmaCliente : order.firmaCliente
+      firmaCliente: firmaCliente !== undefined ? firmaCliente : order.firmaCliente,
+      imagenOrdenOriginal: imagenOrdenOriginal !== undefined ? imagenOrdenOriginal : order.imagenOrdenOriginal
     }, { transaction });
 
     if (Array.isArray(productosAplicados)) {
@@ -204,16 +218,7 @@ export const updateServiceOrder = asyncHandler(async (req, res) => {
       });
 
       if (productosAplicados.length > 0) {
-        const itemsToCreate = productosAplicados.map(p => ({
-          ordenServicioId: order.id,
-          producto: p.producto || 'Producto Fitosanitario',
-          principioActivo: p.principioActivo || null,
-          dosis: p.dosis || null,
-          lote: p.lote || null,
-          tiempoCarencia: p.tiempoCarencia || null,
-          cantidadTotal: p.cantidadTotal || null
-        }));
-
+        const itemsToCreate = productosAplicados.map(p => mapDetalleRow(p, order.id));
         await ServiceOrderProduct.bulkCreate(itemsToCreate, { transaction });
       }
     }
@@ -258,6 +263,7 @@ export const saveServiceEvaluation = asyncHandler(async (req, res) => {
     ppmPH3,
     observaciones,
     recomendaciones,
+    detalle,
     fotos,
     firmaCliente,
     firmaTecnico
@@ -276,6 +282,7 @@ export const saveServiceEvaluation = asyncHandler(async (req, res) => {
     ppmPH3: (ppmPH3 !== undefined && ppmPH3 !== null && ppmPH3 !== '') ? Number(ppmPH3) : null,
     observaciones: observaciones || null,
     recomendaciones: recomendaciones || null,
+    detalle: Array.isArray(detalle) ? JSON.stringify(detalle) : (detalle || null),
     fotos: Array.isArray(fotos) ? JSON.stringify(fotos) : (fotos || null),
     firmaCliente: firmaCliente || null,
     firmaTecnico: firmaTecnico || null

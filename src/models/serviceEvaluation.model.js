@@ -51,6 +51,10 @@ const ServiceEvaluation = sequelize.define('ServiceEvaluation', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  detalle: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true // JSON: filas de la planilla (instalación, grano, estado cereal GP/SP, lugar de toma, resultado IM/AIV/MIV/BIV/SI)
+  },
   fotos: {
     type: DataTypes.TEXT('long'),
     allowNull: true // JSON array de imágenes en base64

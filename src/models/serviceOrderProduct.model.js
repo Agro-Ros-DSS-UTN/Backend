@@ -16,9 +16,18 @@ const ServiceOrderProduct = sequelize.define('ServiceOrderProduct', {
       key: 'id'
     }
   },
+  // Columnas de la planilla "Detalle del servicio" (una fila por instalación)
+  tipoInstalacion: { type: DataTypes.STRING(40), allowNull: true },
+  numero: { type: DataTypes.STRING(20), allowNull: true },
+  capacidadTn: { type: DataTypes.STRING(20), allowNull: true },
+  grano: { type: DataTypes.STRING(60), allowNull: true },
+  cantidadTn: { type: DataTypes.STRING(20), allowNull: true },
+  estadoCereal: { type: DataTypes.STRING(10), allowNull: true },
+  estadoInstalaciones: { type: DataTypes.STRING(10), allowNull: true },
+  estadoInfestacion: { type: DataTypes.STRING(10), allowNull: true },
   producto: {
     type: DataTypes.STRING(150),
-    allowNull: false
+    allowNull: true
   },
   principioActivo: {
     type: DataTypes.STRING(150),
