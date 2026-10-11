@@ -25,6 +25,8 @@ export const Oportunidad = sequelize.define('Oportunidad', {
   empresaId: { type: DataTypes.INTEGER, allowNull: true },
   usuarioId: { type: DataTypes.STRING(20), allowNull: true },
   contactoId: { type: DataTypes.INTEGER, allowNull: true },
+  // Quien la cargó (puede diferir del responsable si la crea la administración).
+  creadoPorId: { type: DataTypes.STRING(20), allowNull: true },
   // Derivado: días desde el último movimiento (actividad o cambio).
   diasSinContacto: {
     type: DataTypes.VIRTUAL,
@@ -88,6 +90,7 @@ export const Tarea = sequelize.define('Tarea', {
   notas: { type: DataTypes.TEXT, allowNull: true },
   estado: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'Pendiente', validate: { isIn: [ESTADOS_TAREA] } },
   empresaId: { type: DataTypes.INTEGER, allowNull: true },
+  contactoId: { type: DataTypes.INTEGER, allowNull: true },
   actividadId: { type: DataTypes.INTEGER, allowNull: true },
   creadoPorId: { type: DataTypes.STRING(20), allowNull: true },
   finalizadoPorId: { type: DataTypes.STRING(20), allowNull: true },

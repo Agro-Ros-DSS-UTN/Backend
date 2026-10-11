@@ -2,7 +2,7 @@ import { Op } from 'sequelize';
 import {
   sequelize, OrdenServicio, ProductoAplicado, EvaluacionServicio, Empleado, Empresa, ItemCatalogo, Oportunidad, Usuario, Actividad,
 } from '../models/index.js';
-import { ESTADOS_ORDEN, RESULTADOS_EVALUACION } from '../models/servicios.model.js';
+import { ESTADOS_ORDEN, RESULTADOS_EVALUACION, ROLES_EJECUTAN_ORDEN } from '../models/servicios.model.js';
 import { asyncHandler, badRequest, conflict, idParam, notFound, toInt } from '../utils/http.js';
 import { dataUrl, numero, parseFecha, texto, unoDe } from '../utils/validacion.js';
 
@@ -100,21 +100,21 @@ const resolverReferencias = async (b, d, transaction) => {
     d.oportunidadId = b.oportunidadId ? toInt(b.oportunidadId) : null;
     if (d.oportunidadId && !(await Oportunidad.findByPk(d.oportunidadId, { transaction }))) throw badRequest('La oportunidad indicada no existe', { oportunidadId: 'inexistente' });
   }
-  // Técnicos: solo empleados activos con rol "tecnico".
+  // Técnicos: solo empleados activos con rol técnico o supervisor.
   let tecnicoIds;
   if (Array.isArray(b.tecnicoIds)) tecnicoIds = [...new Set(b.tecnicoIds.map((x) => toInt(x)).filter(Boolean))];
   else if (typeof b.tecnicoAplicador === 'string') {
     const nombres = b.tecnicoAplicador.split(/[,;/]| y /).map((s) => s.trim()).filter(Boolean);
     tecnicoIds = [];
     for (const n of nombres) {
-      const emp = await Empleado.findOne({ where: { nombreApellido: n, rol: 'tecnico' }, transaction });
+      const emp = await Empleado.findOne({ where: { nombreApellido: n, rol: { [Op.in]: ROLES_EJECUTAN_ORDEN } }, transaction });
       if (!emp) throw badRequest(`"${n}" no está registrado como técnico. Cargalo en Empleados con rol Técnico.`, { tecnicoAplicador: 'no es técnico' });
       tecnicoIds.push(emp.id);
     }
   }
   if (tecnicoIds?.length) {
-    const validos = await Empleado.findAll({ where: { id: { [Op.in]: tecnicoIds }, rol: 'tecnico', activo: true }, attributes: ['id'], transaction });
-    if (validos.length !== tecnicoIds.length) throw badRequest('Solo se pueden asignar empleados activos con rol Técnico', { tecnicoIds: 'no es técnico' });
+    const validos = await Empleado.findAll({ where: { id: { [Op.in]: tecnicoIds }, rol: { [Op.in]: ROLES_EJECUTAN_ORDEN }, activo: true }, attributes: ['id'], transaction });
+    if (validos.length !== tecnicoIds.length) throw badRequest('Solo se pueden asignar empleados activos con rol Técnico o Supervisor', { tecnicoIds: 'no es técnico' });
   }
   return tecnicoIds;
 };

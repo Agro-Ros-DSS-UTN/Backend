@@ -9,6 +9,10 @@
     "db:status": "node scripts/db-migrate.mjs status",
     "db:migrate": "node scripts/db-migrate.mjs up",
     "db:audit": "node scripts/db-audit.mjs",
+    "db:respaldo": "node scripts/respaldo-db.mjs",
+    "db:restaurar": "node scripts/restaurar-respaldo.mjs",
+    "db:ensayo": "node scripts/ensayo-migracion.mjs",
+    "dev:ensayo": "node scripts/servidor-ensayo.mjs",
     "db:crear-admin": "node scripts/crear-admin.mjs",
     "seed:localidades": "node scripts/seed-localidades.mjs",
     "test:seguridad": "node scripts/security-tests.mjs"

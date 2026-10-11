@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { sequelize, Tarea, TareaAsignado, Usuario, Empresa, Actividad, Oportunidad } from '../models/index.js';
+import { sequelize, Tarea, TareaAsignado, Usuario, Empresa, Contacto, ContactoTelefono, Actividad, Oportunidad } from '../models/index.js';
 import { TIPOS_TAREA, NIVELES, ESTADOS_TAREA } from '../models/comercial.model.js';
 import { isAdmin } from '../middlewares/auth.middleware.js';
 import { asyncHandler, badRequest, forbidden, idParam, notFound, toInt } from '../utils/http.js';
@@ -15,6 +15,10 @@ const include = [
   { model: Usuario, as: 'creadoPor', attributes: ['idUser', 'nombreApellido', 'rol'] },
   { model: Usuario, as: 'finalizadoPor', attributes: ['idUser', 'nombreApellido', 'rol'] },
   { model: Empresa, as: 'empresa', attributes: ['id', 'razonSocial'], paranoid: false },
+  {
+    model: Contacto, as: 'contacto', attributes: ['id', 'nombreApellido', 'cargo', 'email', 'empresaId'], paranoid: false,
+    include: [{ model: ContactoTelefono, as: 'telefonos', attributes: ['numero'] }],
+  },
   {
     model: Actividad, as: 'actividad', attributes: ['id', 'tipoContacto', 'fechaHora', 'descripcion', 'oportunidadId'],
     include: [{ model: Oportunidad, as: 'oportunidad', attributes: ['id', 'titulo'], paranoid: false }],
@@ -46,6 +50,13 @@ export const serializeTarea = (t) => {
     notas: j.notas ?? null,
     empresaId: j.empresaId ?? null,
     empresa: j.empresa?.razonSocial ?? null,
+    contactoId: j.contactoId ?? null,
+    // `contacto` sigue siendo texto (como en v1); el detalle va aparte.
+    contacto: j.contacto?.nombreApellido ?? null,
+    contactoDetalle: j.contacto ? {
+      id: j.contacto.id, nombreApellido: j.contacto.nombreApellido, cargo: j.contacto.cargo ?? null, email: j.contacto.email ?? null,
+      telefonos: (j.contacto.telefonos || []).map((t) => t.numero),
+    } : null,
     actividadId: j.actividadId ?? null,
     actividad: j.actividad ? {
       id: j.actividad.id, tipoContacto: j.actividad.tipoContacto, fechaHora: j.actividad.fechaHora,
@@ -73,7 +84,7 @@ const visible = async (req, tarea) => {
   return Boolean(await TareaAsignado.findOne({ where: { tareaId: tarea.id, usuarioId: req.user.idUser } }));
 };
 
-const datosTarea = async (b, transaction) => {
+const datosTarea = async (b, transaction, actual = null) => {
   const d = {};
   if (b.titulo !== undefined || b.descripcion !== undefined) d.titulo = texto(b.titulo ?? b.descripcion, 'titulo', 200);
   if (b.descripcion !== undefined) d.descripcion = texto(b.descripcion, 'descripcion', 5000);
@@ -95,8 +106,32 @@ const datosTarea = async (b, transaction) => {
     d.empresaId = e?.id ?? null;
     if (nombre && !e) d.notas = [d.notas ?? b.notas, `Empresa: ${nombre}`].filter(Boolean).join('\n');
   }
-  if (b.contacto && typeof b.contacto === 'string' && !(d.notas || '').includes(b.contacto)) {
-    d.notas = [d.notas ?? texto(b.notas, 'notas', 5000), `Contacto: ${texto(b.contacto, 'contacto', 150)}`].filter(Boolean).join('\n');
+  // Contacto de la tarea (P-7): vínculo a un contacto cargado. Tiene que ser de la
+  // empresa de la tarea; si la tarea no tiene empresa, toma la del contacto.
+  if (b.contactoId) {
+    d.contactoId = toInt(b.contactoId);
+  } else if (typeof b.contacto === 'string' && b.contacto.trim()) {
+    // Pantalla v1: nombre escrito. Se vincula si coincide con un contacto de la empresa;
+    // si no, queda en las notas.
+    const nombre = texto(b.contacto, 'contacto', 150);
+    const c = nombre ? await Contacto.findOne({ where: { nombreApellido: nombre, ...(d.empresaId ? { empresaId: d.empresaId } : {}) }, transaction }) : null;
+    d.contactoId = c?.id ?? null;
+    if (nombre && !c && !(d.notas || b.notas || '').includes(nombre)) {
+      d.notas = [d.notas ?? texto(b.notas, 'notas', 5000), `Contacto: ${nombre}`].filter(Boolean).join('\n');
+    }
+  } else if (b.contactoId !== undefined || b.contacto !== undefined) {
+    d.contactoId = null;
+  }
+  if (d.contactoId) {
+    const c = await Contacto.findByPk(d.contactoId, { transaction });
+    if (!c) throw badRequest('El contacto indicado no existe', { contactoId: 'inexistente' });
+    const empresaTarea = d.empresaId !== undefined ? d.empresaId : actual?.empresaId ?? null;
+    if (empresaTarea && c.empresaId && c.empresaId !== empresaTarea) throw badRequest('El contacto no pertenece a la empresa de la tarea', { contactoId: 'otra empresa' });
+    if (!empresaTarea && c.empresaId) d.empresaId = c.empresaId;
+  } else if (d.empresaId !== undefined && d.contactoId === undefined && actual?.contactoId) {
+    // Cambió la empresa: si el contacto anterior era de otra empresa, se desvincula.
+    const c = await Contacto.findByPk(actual.contactoId, { transaction, paranoid: false });
+    if (c && c.empresaId !== d.empresaId) d.contactoId = null;
   }
   const actividadId = b.actividadId !== undefined ? b.actividadId : b.formularioActividadId;
   if (actividadId !== undefined) {
@@ -183,7 +218,7 @@ export const actualizar = asyncHandler(async (req, res) => {
   }
   let agregados = [];
   await sequelize.transaction(async (transaction) => {
-    const d = await datosTarea(body, transaction);
+    const d = await datosTarea(body, transaction, t);
     if (d.titulo === null) throw badRequest('El título no puede quedar vacío');
     await t.update(d, { transaction });
     agregados = await sincronizarAsignados(t, body.asignadosIds, transaction);

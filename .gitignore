@@ -26,3 +26,8 @@ dist-ssr
 
 # Plantilla de variables de entorno (solo uso local)
 .env.example
+
+# Respaldos e informes de base de datos (tienen datos reales o detalles internos)
+respaldos/
+ensayo-migracion-*.txt
+auditoria-db-*.txt

@@ -101,23 +101,49 @@ La especificación funcional completa y las minutas de reunión se encuentran en
 | `DB_SSL_CA` | recomendada | Certificado de la base para verificar el servidor |
 | `JWT_SECRET` | sí | 32+ caracteres aleatorios. Sin esto el servidor no arranca |
 | `FRONTEND_URL` | sí | Dominio(s) del frontend separados por coma (CORS) |
-| `JWT_EXPIRES_IN` / `JWT_LONG_EXPIRES_IN` | no (`8h` / `7d`) | Duración de la sesión normal y de "mantener sesión" |
+| `JWT_EXPIRES_IN` / `JWT_LONG_EXPIRES_IN` | no (`8h` / `3d`) | Duración de la sesión normal y de "mantener sesión" |
 | `DB_AUTO_MIGRATE` | no (`false`) | Aplicar migraciones al arrancar. En producción, dejar apagado |
 | `TRUST_PROXY` | no | Saltos de proxy (Hostinger: `1`) para ver la IP real en el límite de intentos |
 | `SMTP_*`, `GOOGLE_*` | no | Recordatorios por mail y Google Calendar |
+| `ENSAYO_DB_NAME`, `ENSAYO_DB_USER`, `ENSAYO_DB_PASS` | no | Base de ensayo para `db:ensayo` y `dev:ensayo` (solo en tu PC) |
 
 ### Comandos
 
 ```bash
 npm run db:audit          # auditoría de solo lectura (sirve contra producción)
+npm run db:respaldo       # respaldo completo en respaldos/*.sql (solo lectura)
+npm run db:restaurar -- <archivo.sql> --destino=<base>   # deja la base igual al respaldo
+npm run db:ensayo         # copia producción a la base de ensayo, la migra y verifica (no toca producción)
+npm run dev:ensayo        # API local contra la base de ensayo, sin mails ni calendario
 npm run db:status         # migraciones aplicadas / pendientes
 npm run db:migrate        # aplica las pendientes (hace respaldo _bak_v1_* la primera vez)
-npm run seed:localidades  # provincias y localidades oficiales (Georef); --dry-run para simular
+npm run seed:localidades  # provincias + localidades de las 7 provincias de trabajo (Georef); --todas, --dry-run
 npm run db:crear-admin -- <id> "<Nombre>"   # crea o reactiva un administrador
 npm run test:seguridad    # pruebas de seguridad (solo contra una base de prueba)
 npm start
 ```
 
+### Traer la rama v2 a tu PC (sin tocar `main`)
+
+Mientras no se suba a GitHub, la rama llega como dos archivos `.bundle` (backend y frontend). Con `git worktree`
+la versión nueva queda en **otra carpeta** y tu carpeta actual sigue en `main`, sin cambios:
+
+El bundle trae solo los commits nuevos: tu `main` tiene que tener el último commit de GitHub
+(backend `34aa618`, frontend `e7fcd38`). Si `git fetch` dice que falta un commit, primero `git pull` en `main`.
+
+```powershell
+# En la carpeta del repo del backend (la que tiene el .env de producción)
+git fetch C:\ruta\a\backend-v2.bundle seguridad-modelo-v2:seguridad-modelo-v2
+git worktree add "C:\CRM AgroRos v2\backend" seguridad-modelo-v2
+copy .env "C:\CRM AgroRos v2\backend\.env"
+cd "C:\CRM AgroRos v2\backend"; npm install
+
+# Lo mismo en la carpeta del repo del frontend, con frontend-v2.bundle y "C:\CRM AgroRos v2\frontend"
+```
+
+Para descartarla: `git worktree remove "C:\CRM AgroRos v2\backend"` y `git branch -D seguridad-modelo-v2`.
+Cuando se suba a GitHub, la rama se trae con un `git fetch` normal.
+
 Documentación: [`docs/MIGRACION_V2.md`](docs/MIGRACION_V2.md) (plan de migración y despliegue),
-[`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) (correcciones), [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md)
+[`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) (correcciones), [`docs/DECISIONES.md`](docs/DECISIONES.md) (puntos decididos el 11/10), [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md)
 (tabla → API → pantalla) y el diagrama [`docs/DiagramaMD-DSS-v2.1.drawio`](docs/DiagramaMD-DSS-v2.1.drawio).

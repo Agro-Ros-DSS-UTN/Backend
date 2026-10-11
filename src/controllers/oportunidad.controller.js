@@ -40,6 +40,7 @@ export const serializeOportunidad = (o) => {
     empresaId: j.empresaId ?? null,
     empresa: j.empresa?.razonSocial ?? null,
     usuarioId: j.usuarioId ?? null,
+    creadoPorId: j.creadoPorId ?? null,
     responsable: j.responsable ? { idUser: j.responsable.idUser, nombreApellido: j.responsable.nombreApellido } : null,
     contactoId: j.contactoId ?? null,
     contacto: j.contacto ? { id: j.contacto.id, nombreApellido: j.contacto.nombreApellido } : null,
@@ -154,7 +155,7 @@ export const crearOportunidad = async (req, body, transaction) => {
   if (!isAdmin(req)) d.usuarioId = req.user.idUser; // el vendedor solo crea a su nombre
   else if (d.usuarioId === undefined) d.usuarioId = req.user.idUser;
   await validarReferencias(d, transaction);
-  const o = await Oportunidad.create({ ...d, estado: d.estado || 'Prospecto', fechaUltimaActualizacion: new Date() }, { transaction });
+  const o = await Oportunidad.create({ ...d, estado: d.estado || 'Prospecto', fechaUltimaActualizacion: new Date(), creadoPorId: req.user.idUser }, { transaction });
   await guardarItems(o, body.items, transaction);
   return o;
 };
@@ -188,7 +189,13 @@ export const actualizar = asyncHandler(async (req, res) => {
 export const eliminar = asyncHandler(async (req, res) => {
   const o = await Oportunidad.findByPk(idParam(req));
   if (!o) throw notFound('Oportunidad');
-  if (!isAdmin(req) && o.usuarioId !== req.user.idUser) throw forbidden('Solo la administración o el responsable pueden dar de baja la oportunidad');
+  // P-3: el vendedor solo da de baja las oportunidades que cargó él, y siempre que no
+  // tengan actividades de otros usuarios (la visibilidad es global, ver P-4).
+  if (!isAdmin(req)) {
+    if (o.creadoPorId !== req.user.idUser) throw forbidden('Solo podés dar de baja las oportunidades que cargaste vos. Pedíselo a la administración.');
+    const ajenas = await Actividad.count({ where: { oportunidadId: o.id, usuarioId: { [Op.ne]: req.user.idUser } } });
+    if (ajenas) throw forbidden(`La oportunidad tiene ${ajenas} actividad(es) de otros usuarios. Pedile la baja a la administración.`);
+  }
   await o.destroy();
   res.json({ message: 'Oportunidad dada de baja (sus actividades se conservan)' });
 });

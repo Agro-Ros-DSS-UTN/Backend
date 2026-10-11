@@ -1,7 +1,9 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-export const ROLES_EMPLEADO = ['tecnico', 'ayudante', 'chofer', 'administrativo'];
+export const ROLES_EMPLEADO = ['tecnico', 'supervisor', 'ayudante', 'chofer', 'administrativo'];
+// Roles que pueden figurar como técnicos de una orden de servicio.
+export const ROLES_EJECUTAN_ORDEN = ['tecnico', 'supervisor'];
 export const ESTADOS_ORDEN = ['Programada', 'En Ejecución', 'Completada', 'Cancelada'];
 export const RESULTADOS_EVALUACION = ['Sin insectos vivos', 'Con insectos vivos', 'Seguimiento', 'Refumigación'];
 

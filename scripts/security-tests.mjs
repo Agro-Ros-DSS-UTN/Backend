@@ -176,6 +176,9 @@ const noTecnico = await call('POST', '/ordenes-servicio', { token: A, body: { nu
 check('Solo empleados con rol técnico en la orden → 400', noTecnico.status === 400, JSON.stringify(noTecnico.data));
 const os = await call('POST', '/ordenes-servicio', { token: A, body: { numeroOrden: `T-${Date.now()}`, empresaId: emp.id, tecnicoIds: [1], fechaProgramada: '2026-10-01' } });
 check('Orden con técnico válido → 201', os.status === 201, JSON.stringify(os.data).slice(0, 200));
+const sup = (await call('GET', '/empleados?rol=tecnico,supervisor&activos=1', { token: A })).data?.data?.find((e) => e.rol === 'supervisor');
+const osSup = sup && await call('POST', '/ordenes-servicio', { token: A, body: { numeroOrden: `S-${Date.now()}`, empresaId: emp.id, tecnicoIds: [sup.id] } });
+check('Un supervisor también puede ejecutar la orden → 201', osSup?.status === 201, JSON.stringify(osSup?.data || 'sin supervisor activo').slice(0, 200));
 const ev = await call('POST', `/ordenes-servicio/${os.data?.data?.id}/evaluacion`, { token: A, body: { resultado: 'Sin insectos vivos', satisfaccionCliente: 5, firmaCliente: 'javascript:alert(1)' } });
 check('Firma que no es imagen → 400', ev.status === 400);
 const ev2 = await call('POST', `/ordenes-servicio/${os.data?.data?.id}/evaluacion`, { token: A, body: { resultado: 'Sin insectos vivos', satisfaccionCliente: 5, fechaEvaluacion: '2026-10-01' } });
@@ -188,6 +191,33 @@ const c = await call('POST', '/contactos', { token: V, body: { nombreApellido: '
 check('Contacto creado con id numérico', c.status === 201 && Number.isInteger(c.data.data.id));
 check('GET /clientes/:dni (v1) encuentra el contacto', (await call('GET', '/clientes/30111222', { token: V })).data?.data?.id === c.data.data.id);
 check('Vendedor no puede dar de baja contactos → 403', (await call('DELETE', `/contactos/${c.data.data.id}`, { token: V })).status === 403);
+
+// ── 11b. Contacto de la tarea (P-7) ──
+const tc = await call('POST', '/tareas', { token: V, body: { titulo: 'Llamar al contacto', fechaVencimiento: '2026-10-25', contactoId: c.data.data.id } });
+check('P-7: tarea con contactoId → 201 y toma la empresa del contacto', tc.status === 201 && tc.data.data.contactoId === c.data.data.id && tc.data.data.empresaId === emp.id && tc.data.data.contacto === 'Contacto Prueba', JSON.stringify(tc.data).slice(0, 300));
+check('P-7: la tarea devuelve el teléfono del contacto', tc.data?.data?.contactoDetalle?.telefonos?.length === 1, JSON.stringify(tc.data?.data?.contactoDetalle));
+const otraEmp = empresas.find((e) => e.id !== emp.id);
+check('P-7: contacto de otra empresa → 400', (await call('POST', '/tareas', { token: V, body: { titulo: 'x', empresaId: otraEmp.id, contactoId: c.data.data.id } })).status === 400);
+const tTexto = await call('POST', '/tareas', { token: V, body: { titulo: 'x', empresaId: emp.id, contacto: 'Persona No Cargada' } });
+check('P-7: contacto escrito que no existe → queda en notas, sin vínculo', tTexto.status === 201 && !tTexto.data.data.contactoId && tTexto.data.data.notas.includes('Persona No Cargada'), JSON.stringify(tTexto.data).slice(0, 200));
+const tCambio = await call('PUT', `/tareas/${tc.data?.data?.id}`, { token: V, body: { empresaId: otraEmp.id } });
+check('P-7: al cambiar la empresa, se desvincula el contacto de la otra', tCambio.status === 200 && tCambio.data.data.contactoId === null, JSON.stringify(tCambio.data).slice(0, 200));
+
+// ── 11c. Bajas: el vendedor solo da de baja lo que creó él (P-3) ──
+const oppV = act.data?.data?.oportunidadId; // creada por V en el punto 6
+check('P-3: otro vendedor no da de baja la oportunidad ajena → 403', (await call('DELETE', `/oportunidades/${oppV}`, { token: V2 })).status === 403);
+const actV2 = await call('POST', '/actividades', { token: V2, body: { oportunidadId: oppV, descripcion: 'Visita de otro vendedor (P-4)' } });
+check('P-4: otro vendedor registra actividad en una oportunidad ajena → 201', actV2.status === 201, JSON.stringify(actV2.data).slice(0, 200));
+check('P-3: no se da de baja una oportunidad con actividades de otros → 403', (await call('DELETE', `/oportunidades/${oppV}`, { token: V })).status === 403);
+check('P-3: otro vendedor no borra la actividad ajena → 403', (await call('DELETE', `/actividades/${act.data?.data?.id}`, { token: V2 })).status === 403);
+const oppAdmin = await call('POST', '/oportunidades', { token: A, body: { titulo: 'Asignada por admin', empresaId: emp.id, usuarioId: VEND } });
+check('P-3: el responsable no da de baja una oportunidad que cargó la administración → 403', oppAdmin.status === 201 && (await call('DELETE', `/oportunidades/${oppAdmin.data.data.id}`, { token: V })).status === 403);
+const oppPropia = await call('POST', '/oportunidades', { token: V, body: { titulo: 'Propia', empresaId: emp.id } });
+check('P-3: el vendedor da de baja la oportunidad que cargó → 200', oppPropia.data?.data?.creadoPorId === VEND && (await call('DELETE', `/oportunidades/${oppPropia.data.data.id}`, { token: V })).status === 200);
+const tCompartida = await call('POST', '/tareas', { token: V, body: { titulo: 'Compartida', fechaVencimiento: '2026-10-25', asignadosIds: [VEND, VEND2] } });
+check('P-3: el asignado no borra una tarea que no creó → 403', (await call('DELETE', `/tareas/${tCompartida.data?.data?.id}`, { token: V2 })).status === 403);
+check('P-3: quien la creó sí → 200', (await call('DELETE', `/tareas/${tCompartida.data?.data?.id}`, { token: V })).status === 200);
+check('P-3: la actividad propia se borra → 200', (await call('DELETE', `/actividades/${actV2.data?.data?.id}`, { token: V2 })).status === 200);
 
 // ── 12. Cabeceras y CORS ──
 const hd = await call('GET', '/api/health', { headers: { Origin: 'https://sitio-malicioso.example' } });
@@ -206,12 +236,23 @@ for (const path of ['/empresas', '/contactos', '/usuarios', '/oportunidades', '/
 }
 
 // ── 14. Cambio de contraseña invalida las sesiones anteriores ──
-const cambio = await call('POST', '/auth/cambiar-password', { token: V2, body: { passwordActual: PW, passwordNueva: 'NuevaClave2026' } });
+// P-6: regla estricta en el servidor (igual que en las pantallas).
+for (const debil of ['123', 'clave-prueba-123', 'NuevaClave2026', 'nuevaclave-2026', 'NUEVA-CLAVE!!', 'Ab1!']) {
+  check(`P-6: contraseña "${debil}" rechazada → 400`, (await call('POST', '/auth/cambiar-password', { token: V2, body: { passwordActual: PW, passwordNueva: debil } })).status === 400);
+}
+check('P-6: alta de usuario con contraseña sin símbolo → 400', (await call('POST', '/usuarios', { token: A, body: { idUser: 'prueba_pw', nombreApellido: 'Prueba', email: 'p@x.com', password: 'Clave12345', rol: 'vendedor' } })).status === 400);
+const cambio = await call('POST', '/auth/cambiar-password', { token: V2, body: { passwordActual: PW, passwordNueva: 'NuevaClave2026!' } });
 check('Cambio de contraseña → 200 con token nuevo', cambio.status === 200 && cambio.data?.token);
 check('El token anterior queda inválido → 401', (await call('GET', '/auth/me', { token: V2 })).status === 401);
 check('El token nuevo funciona', (await call('GET', '/auth/me', { token: cambio.data?.token })).status === 200);
-check('Contraseña débil rechazada → 400', (await call('POST', '/auth/cambiar-password', { token: cambio.data?.token, body: { passwordActual: 'NuevaClave2026', passwordNueva: '123' } })).status === 400);
-await call('POST', '/auth/cambiar-password', { token: cambio.data?.token, body: { passwordActual: 'NuevaClave2026', passwordNueva: PW } });
+check('Contraseña débil rechazada → 400', (await call('POST', '/auth/cambiar-password', { token: cambio.data?.token, body: { passwordActual: 'NuevaClave2026!', passwordNueva: '123' } })).status === 400);
+
+// ── 14b. Duración de la sesión (P-5) ──
+const exp = (t) => { const j = JSON.parse(Buffer.from(t.split('.')[1], 'base64url').toString()); return (j.exp - j.iat) / 3600; };
+const corta = await login(ADMIN);
+const larga = await call('POST', '/auth/login', { body: { idUser: ADMIN, password: PW, mantenerSesion: true } });
+check('P-5: sesión normal de 8 h', exp(corta.data.token) === 8, exp(corta.data.token));
+check('P-5: "Mantener la sesión" dura 3 días', exp(larga.data.token) === 72, exp(larga.data.token));
 
 // ── 15. Límite de intentos de login (al final: bloquea al usuario 15 min) ──
 let ultimo;

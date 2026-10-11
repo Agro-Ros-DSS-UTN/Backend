@@ -1,5 +1,7 @@
 // Negocio → Oportunidad (5 estados), Actividad (vinculada y con adjuntos propios), Tareas.
 
+import { claveNombre, indicePorNombre } from '../texto.js';
+
 export const descripcion = 'Oportunidades, actividades, adjuntos y tareas';
 
 const normalizarTipoContacto = (t) => {
@@ -21,15 +23,43 @@ const ESTADO_SQL = `
     ELSE 'Prospecto'
   END`;
 
+// Busca la empresa a la que se refiere un texto libre: por razón social y, si no,
+// por nombre de un contacto (en v1 a veces se escribía la persona en vez de la empresa).
+const buscadorEmpresa = async (h) => {
+  const empresas = indicePorNombre(await h.rows('SELECT id, razon_social FROM empresas'), 'razon_social');
+  const contactos = indicePorNombre(await h.rows('SELECT id, nombre_apellido, empresa_id FROM contactos WHERE empresa_id IS NOT NULL'), 'nombre_apellido');
+  return (texto) => {
+    const k = claveNombre(texto);
+    if (!k) return null;
+    const e = empresas.get(k);
+    if (e?.length === 1) return { empresaId: e[0].id, via: 'empresa' };
+    const c = contactos.get(k);
+    if (c?.length === 1) return { empresaId: c[0].empresa_id, contactoId: c[0].id, via: 'contacto' };
+    return null; // sin coincidencia o ambiguo: no se adivina
+  };
+};
+
 export const up = async ({ h, log }) => {
   // ── oportunidades ──
+  // Algunas bases v1 tienen además una tabla `oportunidades` vieja (modelo HubSpot
+  // con seller_id → vendedores) que la app ya no usaba: la de verdad es `negocios`.
+  // Se aparta con su contenido para que negocios pueda tomar su nombre.
+  if ((await h.hasTable('negocios')) && (await h.hasTable('oportunidades'))) {
+    const n = await h.count('oportunidades');
+    const destino = (await h.hasTable('_bak_v1_oportunidades_antigua')) ? `_bak_v1_oportunidades_antigua_${Date.now()}` : '_bak_v1_oportunidades_antigua';
+    await h.q(`RENAME TABLE oportunidades TO ${h.id(destino)}`);
+    log(`Tabla oportunidades vieja (sin uso en v1, ${n} filas) apartada como ${destino}.`);
+  }
   await h.renameTable('negocios', 'oportunidades');
+  if (!(await h.hasColumn('oportunidades', 'nombre_negocio')) && !(await h.hasColumn('oportunidades', 'titulo'))) {
+    throw new Error('La tabla oportunidades no tiene la forma esperada (ni nombre_negocio ni titulo). Revisar antes de seguir.');
+  }
   if (await h.hasColumn('oportunidades', 'nombre_negocio')) {
     await h.addColumn('oportunidades', 'motivo_perdida', 'VARCHAR(255) NULL');
     await h.q("UPDATE oportunidades SET motivo_perdida = 'Migrada desde el estado Inactivo' WHERE estado = 'Inactivo'");
     // Si alguna instalación vieja no tenía etapa_comercial, se agrega vacía para usar el mismo CASE.
     await h.addColumn('oportunidades', 'etapa_comercial', 'VARCHAR(60) NULL');
-    await h.q(`UPDATE oportunidades SET estado = ${ESTADO_SQL}`);
+    await h.setExacto('oportunidades', 'estado', ESTADO_SQL);
     const resumen = await h.rows('SELECT estado, COUNT(*) AS n FROM oportunidades GROUP BY estado');
     log(`Estados mapeados: ${resumen.map((r) => `${r.estado}=${r.n}`).join(', ') || '(sin oportunidades)'}`);
   }
@@ -40,6 +70,11 @@ export const up = async ({ h, log }) => {
   await h.renameColumn('oportunidades', 'propietario_id', 'usuario_id');
   await h.addColumn('oportunidades', 'contacto_id', 'INT NULL');
   await h.addColumn('oportunidades', 'fecha_baja', 'DATETIME NULL');
+  // Quién la cargó (P-3: el vendedor solo da de baja lo que creó). En v1 el
+  // responsable era quien la cargaba, así que se toma ese valor.
+  if (await h.addColumn('oportunidades', 'creado_por_id', 'VARCHAR(20) NULL')) {
+    await h.q('UPDATE oportunidades SET creado_por_id = usuario_id');
+  }
   if (await h.hasColumn('oportunidades', 'contacto_num_doc')) {
     await h.q('UPDATE oportunidades o JOIN contactos c ON c.dni = o.contacto_num_doc SET o.contacto_id = c.id');
   }
@@ -74,8 +109,12 @@ export const up = async ({ h, log }) => {
   await h.addIndex('actividades', 'ux_actividades_client_uuid', ['client_uuid'], { unique: true });
   await h.addIndex('actividades', 'ix_actividades_fecha', ['fecha_hora']);
 
-  for (const r of await h.rows('SELECT DISTINCT tipo_contacto AS t FROM actividades')) {
-    await h.q('UPDATE actividades SET tipo_contacto = ? WHERE tipo_contacto = ?', [normalizarTipoContacto(r.t), r.t]);
+  // 'Visita' → 'visita', 'Reunión' → 'reunion', etc. (DISTINCT con collation *_ci junta
+  // las variantes de mayúsculas/acentos, que van todas al mismo valor).
+  const tipos = await h.rows('SELECT DISTINCT tipo_contacto AS t FROM actividades WHERE tipo_contacto IS NOT NULL');
+  if (tipos.length) {
+    const caso = `CASE tipo_contacto ${tipos.map((r) => `WHEN ${h.esc(r.t)} THEN ${h.esc(normalizarTipoContacto(r.t))}`).join(' ')} ELSE 'visita' END`;
+    await h.setExacto('actividades', 'tipo_contacto', caso, 'tipo_contacto IS NOT NULL');
   }
 
   // Corrección de zona horaria (decisión D-3): el formulario mandaba la hora local
@@ -90,35 +129,35 @@ export const up = async ({ h, log }) => {
   await h.q('UPDATE actividades a LEFT JOIN usuarios u ON u.id_user = a.usuario_id SET a.usuario_id = NULL WHERE u.id_user IS NULL');
   await h.q('UPDATE actividades a LEFT JOIN oportunidades o ON o.id = a.oportunidad_id SET a.oportunidad_id = NULL WHERE o.id IS NULL');
 
-  // Actividades sin oportunidad pero con el nombre de una empresa existente:
+  // Actividades sin oportunidad pero con texto de empresa: se busca la empresa
+  // (o el contacto) con comparación tolerante a mayúsculas, acentos y espacios, y
   // se vinculan a una oportunidad abierta de esa empresa o se crea una.
   if (await h.hasColumn('actividades', 'empresa')) {
-    const sueltas = await h.rows(
-      `SELECT a.id, a.usuario_id, a.fecha_hora, e.id AS empresa_id
-         FROM actividades a JOIN empresas e ON LOWER(TRIM(e.razon_social)) = LOWER(TRIM(a.empresa))
-        WHERE a.oportunidad_id IS NULL AND a.empresa IS NOT NULL AND TRIM(a.empresa) <> ''`
-    );
+    const buscar = await buscadorEmpresa(h);
+    const sueltas = await h.rows("SELECT id, usuario_id, fecha_hora, empresa FROM actividades WHERE oportunidad_id IS NULL AND empresa IS NOT NULL AND TRIM(empresa) <> ''");
     let vinculadas = 0;
     let creadas = 0;
     for (const a of sueltas) {
+      const m = buscar(a.empresa);
+      if (!m) continue;
       let opp = await h.one(
         "SELECT id FROM oportunidades WHERE empresa_id = ? AND estado NOT IN ('Ganada', 'Perdida') AND fecha_baja IS NULL ORDER BY id DESC LIMIT 1",
-        [a.empresa_id]
+        [m.empresaId]
       );
       if (!opp) {
         await h.q(
-          `INSERT INTO oportunidades (titulo, estado, empresa_id, usuario_id, fecha_inicio, fecha_ultima_actualizacion)
-           VALUES ('Seguimiento comercial (migrado)', 'Contactado', ?, ?, COALESCE(?, NOW()), NOW())`,
-          [a.empresa_id, a.usuario_id, a.fecha_hora]
+          `INSERT INTO oportunidades (titulo, estado, empresa_id, usuario_id, contacto_id, fecha_inicio, fecha_ultima_actualizacion)
+           VALUES ('Seguimiento comercial (migrado)', 'Contactado', ?, ?, ?, COALESCE(?, NOW()), NOW())`,
+          [m.empresaId, a.usuario_id, m.contactoId || null, a.fecha_hora]
         );
-        opp = await h.one('SELECT id FROM oportunidades WHERE empresa_id = ? ORDER BY id DESC LIMIT 1', [a.empresa_id]);
+        opp = await h.one('SELECT id FROM oportunidades WHERE empresa_id = ? ORDER BY id DESC LIMIT 1', [m.empresaId]);
         creadas++;
       }
       await h.q('UPDATE actividades SET oportunidad_id = ? WHERE id = ?', [opp.id, a.id]);
       vinculadas++;
     }
     const sinVinculo = await h.count('actividades', 'oportunidad_id IS NULL');
-    log(`${vinculadas} actividades vinculadas por nombre de empresa (${creadas} oportunidades creadas); ${sinVinculo} quedan sin vincular para revisión manual.`);
+    log(`${vinculadas} actividades vinculadas por nombre de empresa o contacto (${creadas} oportunidades creadas); ${sinVinculo} quedan sin oportunidad (el texto queda en la descripción).`);
   }
 
   // ── adjuntos (antes: JSON con base64 dentro de actividades.archivo_adjunto) ──
@@ -173,13 +212,39 @@ export const up = async ({ h, log }) => {
   // ── tareas ──
   await h.renameColumn('tareas', 'formulario_actividad_id', 'actividad_id');
   await h.addColumn('tareas', 'empresa_id', 'INT NULL');
+  // El contacto de la tarea pasa a ser un vínculo a contactos (decisión P-7).
+  await h.addColumn('tareas', 'contacto_id', 'INT NULL', 'empresa_id');
   await h.addColumn('tareas', 'creado_por_id', 'VARCHAR(20) NULL');
   if (await h.hasColumn('tareas', 'empresa')) {
-    await h.q('UPDATE tareas t JOIN empresas e ON LOWER(TRIM(e.razon_social)) = LOWER(TRIM(t.empresa)) SET t.empresa_id = e.id WHERE t.empresa IS NOT NULL');
+    const buscar = await buscadorEmpresa(h);
+    const contactos = await h.rows('SELECT id, nombre_apellido, empresa_id FROM contactos');
+    const porNombre = indicePorNombre(contactos, 'nombre_apellido');
+    let conEmpresa = 0;
+    let conContacto = 0;
+    for (const t of await h.rows('SELECT id, empresa, contacto FROM tareas')) {
+      const m = t.empresa ? buscar(t.empresa) : null;
+      let contactoId = null;
+      let empresaId = m?.empresaId || null;
+      if (t.contacto && String(t.contacto).trim()) {
+        const cands = porNombre.get(claveNombre(t.contacto)) || [];
+        // Si hay empresa, el contacto tiene que ser de esa empresa; si no, debe ser único.
+        const elegidos = empresaId ? cands.filter((c) => c.empresa_id === empresaId) : cands;
+        if (elegidos.length === 1) {
+          contactoId = elegidos[0].id;
+          empresaId = empresaId || elegidos[0].empresa_id || null;
+        }
+      }
+      if (!contactoId && m?.contactoId) contactoId = m.contactoId;
+      if (empresaId || contactoId) {
+        await h.q('UPDATE tareas SET empresa_id = ?, contacto_id = ? WHERE id = ?', [empresaId, contactoId, t.id]);
+        if (empresaId) conEmpresa++;
+        if (contactoId) conContacto++;
+      }
+    }
+    log(`Tareas vinculadas: ${conEmpresa} con empresa, ${conContacto} con contacto.`);
   }
-  await h.q("UPDATE tareas SET estado = 'Finalizada' WHERE LOWER(estado) IN ('finalizada', 'completada', 'completa', 'hecha')");
-  await h.q("UPDATE tareas SET estado = 'Cancelada' WHERE LOWER(estado) = 'cancelada'");
-  await h.q("UPDATE tareas SET estado = 'Pendiente' WHERE estado NOT IN ('Finalizada', 'Cancelada')");
+  await h.setExacto('tareas', 'estado', `CASE WHEN LOWER(estado) IN ('finalizada', 'completada', 'completa', 'hecha') THEN 'Finalizada'
+                                              WHEN LOWER(estado) = 'cancelada' THEN 'Cancelada' ELSE 'Pendiente' END`);
   await h.q('UPDATE tareas t LEFT JOIN usuarios u ON u.id_user = t.finalizado_por_id SET t.finalizado_por_id = NULL WHERE u.id_user IS NULL');
   await h.q('UPDATE tareas t LEFT JOIN actividades a ON a.id = t.actividad_id SET t.actividad_id = NULL WHERE a.id IS NULL');
   // Nada de lo que estaba escrito se pierde: la empresa que no se pudo vincular y
@@ -190,8 +255,9 @@ export const up = async ({ h, log }) => {
     log(`${r?.[0]?.affectedRows ?? r?.affectedRows ?? 0} tareas con empresa sin vincular: el nombre quedó en las notas.`);
   }
   if (await h.hasColumn('tareas', 'contacto')) {
-    await h.q(`UPDATE tareas SET notas = CONCAT(IF(notas IS NULL OR notas = '', '', CONCAT(notas, '\\n')), 'Contacto: ', contacto)
-               WHERE contacto IS NOT NULL AND TRIM(contacto) <> ''`);
+    const [r] = await h.q(`UPDATE tareas SET notas = CONCAT(IF(notas IS NULL OR notas = '', '', CONCAT(notas, '\\n')), 'Contacto: ', contacto)
+                            WHERE contacto_id IS NULL AND contacto IS NOT NULL AND TRIM(contacto) <> ''`);
+    if (r.affectedRows) log(`${r.affectedRows} tareas con un contacto que no está cargado: el nombre quedó en las notas.`);
   }
   // Tareas viejas sin filas en tareas_asignados: se vinculan por nombre del usuario.
   if (await h.hasColumn('tareas', 'asignado_a') && await h.hasTable('tareas_asignados')) {
@@ -204,6 +270,7 @@ export const up = async ({ h, log }) => {
   }
   for (const c of ['empresa', 'contacto', 'asignado_a', 'creado_por_rol', 'destinatario_rol']) await h.dropColumn('tareas', c);
   await h.addIndex('tareas', 'ix_tareas_estado_venc', ['estado', 'fecha_vencimiento']);
+  await h.addIndex('tareas', 'ix_tareas_contacto', ['contacto_id']);
 
   await h.renameTable('tareas_asignados', 'tarea_asignados');
   await h.renameColumn('tarea_asignados', 'task_id', 'tarea_id');

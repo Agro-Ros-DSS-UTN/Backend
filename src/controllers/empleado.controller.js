@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { Empleado, OrdenEmpleado } from '../models/index.js';
 import { ROLES_EMPLEADO } from '../models/servicios.model.js';
 import { asyncHandler, badRequest, idParam, notFound } from '../utils/http.js';
@@ -6,6 +7,7 @@ import { dataUrl, parseFecha, requerido, texto, unoDe } from '../utils/validacio
 const ROL_DESDE_PUESTO = (puesto = '') => {
   const p = String(puesto).toLowerCase();
   if (p.includes('técnic') || p.includes('tecnic') || p.includes('aplicador') || p.includes('fumig')) return 'tecnico';
+  if (p.includes('supervis')) return 'supervisor';
   if (p.includes('chofer') || p.includes('conductor')) return 'chofer';
   if (p.includes('admin')) return 'administrativo';
   return 'ayudante';
@@ -33,10 +35,10 @@ const datos = (b) => {
   return d;
 };
 
-// ?rol=tecnico&activos=1 → selector de técnicos de la orden de servicio.
+// ?rol=tecnico,supervisor&activos=1 → selector de técnicos de la orden de servicio.
 export const listar = asyncHandler(async (req, res) => {
   const where = {};
-  if (req.query.rol) where.rol = unoDe(String(req.query.rol), ROLES_EMPLEADO, 'rol');
+  if (req.query.rol) where.rol = { [Op.in]: String(req.query.rol).split(',').map((r) => unoDe(r.trim(), ROLES_EMPLEADO, 'rol')) };
   if (req.query.activos === '1') where.activo = true;
   const empleados = await Empleado.findAll({ where, order: [['nombreApellido', 'ASC']] });
   res.json({ data: empleados });

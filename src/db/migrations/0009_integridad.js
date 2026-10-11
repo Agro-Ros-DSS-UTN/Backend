@@ -24,6 +24,7 @@ export const FOREIGN_KEYS = [
   ['oportunidades', 'empresa_id', 'empresas', 'id', 'RESTRICT'],
   ['oportunidades', 'usuario_id', 'usuarios', 'id_user', 'RESTRICT'],
   ['oportunidades', 'contacto_id', 'contactos', 'id', 'SET NULL'],
+  ['oportunidades', 'creado_por_id', 'usuarios', 'id_user', 'SET NULL'],
   ['oportunidad_items', 'oportunidad_id', 'oportunidades', 'id', 'CASCADE'],
   ['oportunidad_items', 'item_id', 'items_catalogo', 'id', 'RESTRICT'],
   ['actividades', 'oportunidad_id', 'oportunidades', 'id', 'RESTRICT'],
@@ -34,6 +35,7 @@ export const FOREIGN_KEYS = [
   ['adjuntos', 'orden_servicio_id', 'ordenes_servicio', 'id', 'CASCADE'],
   ['tareas', 'actividad_id', 'actividades', 'id', 'SET NULL'], // la tarea sobrevive a su actividad de origen
   ['tareas', 'empresa_id', 'empresas', 'id', 'SET NULL'],
+  ['tareas', 'contacto_id', 'contactos', 'id', 'SET NULL'],
   ['tareas', 'creado_por_id', 'usuarios', 'id_user', 'SET NULL'],
   ['tareas', 'finalizado_por_id', 'usuarios', 'id_user', 'SET NULL'],
   ['tarea_asignados', 'tarea_id', 'tareas', 'id', 'CASCADE'],
@@ -69,7 +71,7 @@ export const FOREIGN_KEYS = [
 
 // Tablas v1 sin lugar en el modelo v2 (sus datos ya se copiaron y están en _bak_v1_*).
 export const OBSOLETE_TABLES = [
-  'formularios_actividad', 'archivos_adjuntos', 'services', 'telefonos', 'telefonos_proveedor',
+  'formularios_actividad', 'archivos_adjuntos', 'services', 'telefonos', 'telefonos_proveedor', 'telefonos_usuario',
   'vendedores', 'empresa_linea_producto', 'promocion_linea_producto', 'tipos_producto', 'productos',
 ];
 

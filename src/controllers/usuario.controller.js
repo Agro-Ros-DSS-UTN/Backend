@@ -12,11 +12,13 @@ const DUMMY_HASH = bcrypt.hashSync('usuario-inexistente', SALT_ROUNDS);
 
 const rolDb = (rol) => (normalizeRole(rol) === 'admin' ? 'administrador' : normalizeRole(rol) === 'vendedor' ? 'vendedor' : null);
 
+// Regla única (P-6), la misma que muestran Usuarios y Mi perfil: entre 8 y 64
+// caracteres, con al menos una mayúscula, un número y un símbolo.
+export const REGLA_PASSWORD = 'entre 8 y 64 caracteres, con al menos una mayúscula, un número y un símbolo';
 export const validarPassword = (pw) => {
   const s = String(pw || '');
-  if (s.length < 8 || !/[A-Za-z]/.test(s) || !/\d/.test(s)) {
-    throw badRequest('La contraseña debe tener al menos 8 caracteres, con letras y números', { password: 'débil' });
-  }
+  const ok = s.length >= 8 && s.length <= 64 && /[A-Z]/.test(s) && /\d/.test(s) && /[^A-Za-z0-9]/.test(s);
+  if (!ok) throw badRequest(`La contraseña debe tener ${REGLA_PASSWORD}`, { password: 'débil' });
   return s;
 };
 

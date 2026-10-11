@@ -21,7 +21,7 @@ const preguntar = (q) => new Promise((resolve) => {
   rl.question(q, (a) => { rl.close(); process.stdout.write('\n'); resolve(a); });
 });
 try {
-  const password = validarPassword(await preguntar('Contraseña (8+ caracteres, letras y números): '));
+  const password = validarPassword(await preguntar('Contraseña (8 a 64 caracteres, con mayúscula, número y símbolo): '));
   const passwordHash = await bcrypt.hash(password, 12);
   const existente = await Usuario.scope('auth').findByPk(idUser);
   if (existente) {

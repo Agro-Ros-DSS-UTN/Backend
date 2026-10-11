@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import {
-  sequelize, Actividad, Adjunto, Oportunidad, Empresa, Usuario, Tarea, TareaAsignado, OrdenServicio, ParadaRuta, HojaRuta,
+  sequelize, Actividad, Adjunto, Oportunidad, Empresa, Contacto, Usuario, Tarea, TareaAsignado, OrdenServicio, ParadaRuta, HojaRuta,
 } from '../models/index.js';
 import { TIPOS_CONTACTO, TIPOS_TAREA, NIVELES, ESTADOS_ABIERTOS } from '../models/comercial.model.js';
 import { isAdmin } from '../middlewares/auth.middleware.js';
@@ -129,7 +129,16 @@ const resolverOportunidad = async (req, body, transaction) => {
   return { oportunidad: o, creada: true };
 };
 
-const crearTareaDeSeguimiento = async (req, actividad, empresaId, t, transaction) => {
+// El contacto de la tarea: el indicado (si es de la empresa) o, por defecto, el de la oportunidad.
+const contactoDeTarea = async (t, empresaId, contactoPorDefecto, transaction) => {
+  const id = toInt(t.contactoId);
+  if (!id) return contactoPorDefecto || null;
+  const c = await Contacto.findByPk(id, { transaction });
+  if (!c || (empresaId && c.empresaId && c.empresaId !== empresaId)) throw badRequest('El contacto de la tarea no pertenece a la empresa', { 'tarea.contactoId': 'otra empresa' });
+  return c.id;
+};
+
+const crearTareaDeSeguimiento = async (req, actividad, empresaId, t, transaction, contactoPorDefecto = null) => {
   const titulo = texto(t.titulo ?? t.descripcion, 'tarea.titulo', 200);
   const notas = texto(t.notas, 'tarea.notas', 5000);
   if (!titulo) throw badRequest('Indicá qué hay que hacer en la tarea de seguimiento', { 'tarea.titulo': 'obligatorio' });
@@ -144,6 +153,7 @@ const crearTareaDeSeguimiento = async (req, actividad, empresaId, t, transaction
     horaVencimiento: /^\d{2}:\d{2}$/.test(t.horaVencimiento || '') ? t.horaVencimiento : null,
     notas: notas ?? null,
     empresaId,
+    contactoId: await contactoDeTarea(t, empresaId, contactoPorDefecto, transaction),
     actividadId: actividad.id,
     creadoPorId: req.user.idUser,
   }, { transaction });
@@ -253,7 +263,7 @@ export const crear = asyncHandler(async (req, res) => {
     if (pedidas.length > 8) throw badRequest('Se pueden generar hasta 8 tareas de seguimiento por actividad');
     const tareas = [];
     if (!d.sinSeguimiento) {
-      for (const t of pedidas) tareas.push(await crearTareaDeSeguimiento(req, actividad, empresaId, t, transaction));
+      for (const t of pedidas) tareas.push(await crearTareaDeSeguimiento(req, actividad, empresaId, t, transaction, oportunidad?.contactoId));
     }
     return { actividad, oportunidadCreada: creada ? oportunidad : null, tareas };
   });

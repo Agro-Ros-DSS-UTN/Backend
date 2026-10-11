@@ -58,6 +58,7 @@ Actividad.hasMany(Tarea, { foreignKey: 'actividadId', as: 'tareas', ...nc });
 Tarea.belongsTo(Actividad, { foreignKey: 'actividadId', as: 'actividad', ...nc });
 
 Tarea.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa', ...nc });
+Tarea.belongsTo(Contacto, { foreignKey: 'contactoId', as: 'contacto', ...nc });
 Tarea.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor', ...nc });
 Tarea.belongsTo(Usuario, { foreignKey: 'finalizadoPorId', as: 'finalizadoPor', ...nc });
 Tarea.hasMany(TareaAsignado, { foreignKey: 'tareaId', as: 'asignaciones', ...nc });

@@ -5,6 +5,7 @@ export const descripcion = 'Órdenes de servicio, empleados con rol, productos a
 const rolDe = (puesto) => {
   const p = String(puesto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   if (p.includes('tecnic') || p.includes('aplicad')) return 'tecnico';
+  if (p.includes('supervis')) return 'supervisor';
   if (p.includes('chofer') || p.includes('conductor')) return 'chofer';
   if (p.includes('administ')) return 'administrativo';
   return 'ayudante';

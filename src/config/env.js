@@ -48,7 +48,8 @@ export const env = {
     secret: jwtSecret,
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
     // Sesión larga ("mantener sesión iniciada" en el celular del vendedor)
-    longExpiresIn: process.env.JWT_LONG_EXPIRES_IN || '7d',
+    // P-5: 3 días (antes 7). Al cambiar contraseña, rol o estado la sesión se corta igual.
+    longExpiresIn: process.env.JWT_LONG_EXPIRES_IN || '3d',
     issuer: 'crm-agroros',
     audience: 'crm-agroros-web',
   },
