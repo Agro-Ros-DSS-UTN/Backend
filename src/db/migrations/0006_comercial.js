@@ -176,23 +176,43 @@ export const up = async ({ h, log }) => {
   if (await h.hasColumn('actividades', 'archivo_adjunto')) {
     const conAdjunto = await h.rows("SELECT id, archivo_adjunto FROM actividades WHERE archivo_adjunto IS NOT NULL AND archivo_adjunto <> ''");
     let n = 0;
+    let vacios = 0;
+    const raros = [];
+    // v1 guardaba {"fotoUrl": "data:image/…", "audioData": {"url": "data:audio/…", "name": "…"}}
+    // (con null en lo que no se cargó). También se acepta un data URL suelto.
+    const pieza = (v) => {
+      if (!v) return null;
+      if (typeof v === 'string') return { contenido: v, nombre: null };
+      if (typeof v === 'object') {
+        const contenido = v.url || v.dataUrl || v.data || v.src || null;
+        return typeof contenido === 'string' ? { contenido, nombre: v.name || v.nombre || null } : null;
+      }
+      return null;
+    };
     for (const a of conAdjunto) {
       let data;
       try { data = JSON.parse(a.archivo_adjunto); } catch { data = { fotoUrl: a.archivo_adjunto }; }
+      if (typeof data === 'string') data = { fotoUrl: data };
       const piezas = [
-        ['foto', data?.fotoUrl],
-        ['audio', data?.audioData],
-      ];
-      for (const [tipo, contenido] of piezas) {
-        if (!contenido || typeof contenido !== 'string') continue;
-        const mime = (contenido.match(/^data:([^;,]+)/) || [])[1] || null;
+        ['foto', pieza(data?.fotoUrl ?? data?.foto ?? data?.imagen)],
+        ['audio', pieza(data?.audioData ?? data?.audio)],
+      ].filter(([, p]) => p && /^data:/.test(p.contenido));
+      if (!piezas.length) {
+        const tieneAlgo = data && Object.values(data).some((v) => v);
+        if (tieneAlgo) raros.push(a.id); else vacios++;
+        continue;
+      }
+      for (const [tipo, p] of piezas) {
+        const mime = (p.contenido.match(/^data:([^;,]+)/) || [])[1] || null;
         await h.q(
-          'INSERT INTO adjuntos (actividad_id, tipo, mime_type, tamanio_kb, contenido) VALUES (?, ?, ?, ?, ?)',
-          [a.id, tipo, mime, Math.ceil((contenido.length * 3) / 4 / 1024), contenido]
+          'INSERT INTO adjuntos (actividad_id, tipo, nombre_archivo, mime_type, tamanio_kb, contenido) VALUES (?, ?, ?, ?, ?, ?)',
+          [a.id, tipo, p.nombre ? String(p.nombre).slice(0, 200) : null, mime, Math.ceil((p.contenido.length * 3) / 4 / 1024), p.contenido]
         );
         n++;
       }
     }
+    if (vacios) log(`${vacios} actividades tenían el campo de adjunto vacío (sin foto ni audio): no hay nada que migrar.`);
+    if (raros.length) log(`Atención: actividades con adjunto en un formato no reconocido (queda en _bak_v1_actividades): ${raros.join(', ')}.`);
     log(`${n} adjuntos extraídos de ${conAdjunto.length} actividades.`);
   }
   // Antes de borrar las columnas de texto libre, lo que no se pudo vincular queda
