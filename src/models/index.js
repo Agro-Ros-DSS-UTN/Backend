@@ -1,221 +1,119 @@
-﻿/* eslint-disable */
+// Modelo de dominio v2 (ver docs/DiagramaMD-DSS-v2.1.drawio).
+// Las reglas ON DELETE de la base las define la migración 0009; acá se declaran
+// las asociaciones con `constraints: false` para que Sequelize nunca intente
+// crear o alterar FKs por su cuenta.
 import sequelize from '../config/database.js';
-import Client from './client.model.js';
-import User from './user.model.js';
-import ClientPhone from './clientPhone.model.js';
-import ClientCompany from './clientCompany.model.js';
-import Locality from './locality.model.js';
-import Province from './province.model.js';
-import TypeProduct from './typeProduct.model.js';
-import ProductLine from './productLine.model.js';
-import Product from './product.model.js';
-import CultivationType from './cultivationType.model.js';
-import activityForm from './activityForm.js';
-import Opportunity from './opportunity.model.js';
-import Objective from './objective.model.js';
-import service from './service.model.js';
-import attachmentFA from './attachmentFA.model.js';
-import Promotion from './promotion.js';
-import Task from './task.model.js';
-import TaskAssignee from './taskAssignee.model.js';
-import Roadmap from './roadmap.model.js';
-import RoadmapStop from './roadmapStop.model.js';
-import InternalNote from './internalNote.model.js';
-import ServiceOrder from './serviceOrder.model.js';
-import ServiceOrderProduct from './serviceOrderProduct.model.js';
-import ServiceEvaluation from './serviceEvaluation.model.js';
-import Employee from './employee.model.js';
+import Usuario from './usuario.model.js';
+import { Provincia, Localidad, UsuarioLocalidad } from './territorio.model.js';
+import { Empresa, Cultivo, EmpresaCultivo, Contacto, ContactoTelefono } from './empresa.model.js';
+import { LineaProducto, ItemCatalogo } from './catalogo.model.js';
+import { Oportunidad, OportunidadItem, Actividad, Adjunto, Tarea, TareaAsignado } from './comercial.model.js';
+import {
+  HojaRuta, ParadaRuta, Objetivo, ObjetivoEmpresa, ObjetivoItem, ObjetivoPromocion,
+  Promocion, PromocionItem, NotaInterna, Notificacion,
+} from './planificacion.model.js';
+import { Empleado, OrdenServicio, OrdenEmpleado, ProductoAplicado, EvaluacionServicio } from './servicios.model.js';
 
-// Relación Cliente -> Telefonos (1..n)
-Client.hasMany(ClientPhone, { foreignKey: 'clientNumDoc', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ClientPhone.belongsTo(Client, { foreignKey: 'clientNumDoc' });
+const nc = { constraints: false };
 
-// Relación EmpresaCliente -> Cliente/Contacto (1..n)
-ClientCompany.hasMany(Client, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Client.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
+// ── Territorio ──
+Provincia.hasMany(Localidad, { foreignKey: 'provinciaId', as: 'localidades', ...nc });
+Localidad.belongsTo(Provincia, { foreignKey: 'provinciaId', as: 'provincia', ...nc });
+Usuario.belongsToMany(Localidad, { through: UsuarioLocalidad, foreignKey: 'usuarioId', otherKey: 'localidadId', as: 'zona', ...nc });
+Localidad.belongsToMany(Usuario, { through: UsuarioLocalidad, foreignKey: 'localidadId', otherKey: 'usuarioId', as: 'vendedores', ...nc });
 
-// Jerarquía de empresas: Empresa Madre -> Región -> Subsede (auto-referencia)
-ClientCompany.hasMany(ClientCompany, { as: 'hijos', foreignKey: 'parentCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ClientCompany.belongsTo(ClientCompany, { as: 'empresaMadre', foreignKey: 'parentCompanyId' });
+// ── Empresas y contactos ──
+Localidad.hasMany(Empresa, { foreignKey: 'localidadId', as: 'empresas', ...nc });
+Empresa.belongsTo(Localidad, { foreignKey: 'localidadId', as: 'localidad', ...nc });
+Empresa.hasMany(Empresa, { foreignKey: 'empresaPadreId', as: 'sucursales', ...nc });
+Empresa.belongsTo(Empresa, { foreignKey: 'empresaPadreId', as: 'empresaPadre', ...nc });
+Empresa.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor', ...nc });
+Empresa.belongsToMany(Cultivo, { through: EmpresaCultivo, foreignKey: 'empresaId', otherKey: 'cultivoId', as: 'cultivos', ...nc });
+Cultivo.belongsToMany(Empresa, { through: EmpresaCultivo, foreignKey: 'cultivoId', otherKey: 'empresaId', as: 'empresas', ...nc });
+Empresa.hasMany(Contacto, { foreignKey: 'empresaId', as: 'contactos', ...nc });
+Contacto.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa', ...nc });
+Contacto.hasMany(ContactoTelefono, { foreignKey: 'contactoId', as: 'telefonos', ...nc });
+ContactoTelefono.belongsTo(Contacto, { foreignKey: 'contactoId', ...nc });
 
-// Relación Localidad -> Cliente (1..n)
-Locality.hasMany(Client, { foreignKey: 'localityCodPostal', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
-Client.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
+// ── Catálogo ──
+LineaProducto.hasMany(ItemCatalogo, { foreignKey: 'lineaId', as: 'items', ...nc });
+ItemCatalogo.belongsTo(LineaProducto, { foreignKey: 'lineaId', as: 'linea', ...nc });
 
-// Relación Provincia -> Localidad (1..n)
-Province.hasMany(Locality, { foreignKey: 'provinceId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Locality.belongsTo(Province, { foreignKey: 'provinceId' });
+// ── Gestión comercial ──
+Empresa.hasMany(Oportunidad, { foreignKey: 'empresaId', as: 'oportunidades', ...nc });
+Oportunidad.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa', ...nc });
+Oportunidad.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'responsable', ...nc });
+Usuario.hasMany(Oportunidad, { foreignKey: 'usuarioId', as: 'oportunidades', ...nc });
+Oportunidad.belongsTo(Contacto, { foreignKey: 'contactoId', as: 'contacto', ...nc });
+Oportunidad.belongsToMany(ItemCatalogo, { through: OportunidadItem, foreignKey: 'oportunidadId', otherKey: 'itemId', as: 'items', ...nc });
+ItemCatalogo.belongsToMany(Oportunidad, { through: OportunidadItem, foreignKey: 'itemId', otherKey: 'oportunidadId', as: 'oportunidades', ...nc });
 
-// Relación Localidad -> EmpresaCliente (1..n)
-Locality.hasMany(ClientCompany, { foreignKey: 'localityCodPostal', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ClientCompany.belongsTo(Locality, { foreignKey: 'localityCodPostal' });
+Oportunidad.hasMany(Actividad, { foreignKey: 'oportunidadId', as: 'actividades', ...nc });
+Actividad.belongsTo(Oportunidad, { foreignKey: 'oportunidadId', as: 'oportunidad', ...nc });
+Actividad.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'autor', ...nc });
+Usuario.hasMany(Actividad, { foreignKey: 'usuarioId', as: 'actividades', ...nc });
+Actividad.hasMany(Adjunto, { foreignKey: 'actividadId', as: 'adjuntos', ...nc });
+Adjunto.belongsTo(Actividad, { foreignKey: 'actividadId', as: 'actividad', ...nc });
+Actividad.hasMany(Tarea, { foreignKey: 'actividadId', as: 'tareas', ...nc });
+Tarea.belongsTo(Actividad, { foreignKey: 'actividadId', as: 'actividad', ...nc });
 
-// Relación TipoProducto -> LineaProducto (1..n)
-TypeProduct.hasMany(ProductLine, { foreignKey: 'typeProductId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-ProductLine.belongsTo(TypeProduct, { foreignKey: 'typeProductId' });
+Tarea.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa', ...nc });
+Tarea.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor', ...nc });
+Tarea.belongsTo(Usuario, { foreignKey: 'finalizadoPorId', as: 'finalizadoPor', ...nc });
+Tarea.hasMany(TareaAsignado, { foreignKey: 'tareaId', as: 'asignaciones', ...nc });
+TareaAsignado.belongsTo(Tarea, { foreignKey: 'tareaId', as: 'tarea', ...nc });
+TareaAsignado.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario', ...nc });
+Usuario.hasMany(TareaAsignado, { foreignKey: 'usuarioId', as: 'asignaciones', ...nc });
 
-// Relación EmpresaCliente <-> LineaProd (muchos a muchos)
-ClientCompany.belongsToMany(ProductLine, {
-  through: 'empresa_linea_producto',
-  foreignKey: 'clientCompanyId',
-  otherKey: 'productLineId'
-});
-ProductLine.belongsToMany(ClientCompany, {
-  through: 'empresa_linea_producto',
-  foreignKey: 'productLineId',
-  otherKey: 'clientCompanyId'
-});
+// ── Planificación ──
+HojaRuta.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'asignado', ...nc });
+HojaRuta.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor', ...nc });
+HojaRuta.hasMany(ParadaRuta, { foreignKey: 'hojaRutaId', as: 'paradas', ...nc });
+ParadaRuta.belongsTo(HojaRuta, { foreignKey: 'hojaRutaId', as: 'hojaRuta', ...nc });
+ParadaRuta.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa', ...nc });
+ParadaRuta.hasOne(Actividad, { foreignKey: 'paradaId', as: 'actividad', ...nc });
+Actividad.belongsTo(ParadaRuta, { foreignKey: 'paradaId', as: 'parada', ...nc });
 
-// Relación EmpresaCliente <-> TipoCultivo (muchos a muchos)
-ClientCompany.belongsToMany(CultivationType, {
-  through: 'empresa_tipo_cultivo',
-  foreignKey: 'clientCompanyId',
-  otherKey: 'cultivationTypeId'
-});
-CultivationType.belongsToMany(ClientCompany, {
-  through: 'empresa_tipo_cultivo',
-  foreignKey: 'cultivationTypeId',
-  otherKey: 'clientCompanyId'
-});
+Objetivo.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'vendedor', ...nc });
+Objetivo.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor', ...nc });
+Usuario.hasMany(Objetivo, { foreignKey: 'usuarioId', as: 'objetivos', ...nc });
+Objetivo.belongsToMany(Empresa, { through: ObjetivoEmpresa, foreignKey: 'objetivoId', otherKey: 'empresaId', as: 'empresas', ...nc });
+Empresa.belongsToMany(Objetivo, { through: ObjetivoEmpresa, foreignKey: 'empresaId', otherKey: 'objetivoId', as: 'objetivos', ...nc });
+Objetivo.belongsToMany(ItemCatalogo, { through: ObjetivoItem, foreignKey: 'objetivoId', otherKey: 'itemId', as: 'items', ...nc });
+Objetivo.belongsToMany(Promocion, { through: ObjetivoPromocion, foreignKey: 'objetivoId', otherKey: 'promocionId', as: 'promociones', ...nc });
+Promocion.belongsToMany(Objetivo, { through: ObjetivoPromocion, foreignKey: 'promocionId', otherKey: 'objetivoId', as: 'objetivos', ...nc });
+Promocion.belongsToMany(ItemCatalogo, { through: PromocionItem, foreignKey: 'promocionId', otherKey: 'itemId', as: 'items', ...nc });
+ItemCatalogo.belongsToMany(Promocion, { through: PromocionItem, foreignKey: 'itemId', otherKey: 'promocionId', as: 'promociones', ...nc });
 
-// Relación Promoción <-> LineaProd (muchos a muchos)
-Promotion.belongsToMany(ProductLine, {
-  through: 'promocion_linea_producto',
-  foreignKey: 'promotionId',
-  otherKey: 'productLineId'
-});
-ProductLine.belongsToMany(Promotion, {
-  through: 'promocion_linea_producto',
-  foreignKey: 'productLineId',
-  otherKey: 'promotionId'
-});
+NotaInterna.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'autor', ...nc });
+Notificacion.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario', ...nc });
 
-// Relación Objetivo <-> Promoción (muchos a muchos)
-Objective.belongsToMany(Promotion, {
-  through: 'objetivo_promocion',
-  foreignKey: 'objectiveId',
-  otherKey: 'promotionId'
-});
-Promotion.belongsToMany(Objective, {
-  through: 'objetivo_promocion',
-  foreignKey: 'promotionId',
-  otherKey: 'objectiveId'
-});
-
-// Relación Usuario -> Notas Internas (1..n)
-User.hasMany(InternalNote, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-InternalNote.belongsTo(User, { foreignKey: 'idUser' });
-
-// Las relaciones con "vendedor" apuntan directamente a `usuarios` (ya no existe la tabla `vendedores`).
-// Usuario (autor) -> Actividad (1..n)
-User.hasMany(activityForm, { foreignKey: 'idUser', constraints: false });
-activityForm.belongsTo(User, { as: 'autor', foreignKey: 'idUser', constraints: false });
-
-// Usuario (vendedor) -> Objetivo (1..n)
-User.hasMany(Objective, { foreignKey: 'idUser', constraints: false });
-Objective.belongsTo(User, { as: 'vendedor', foreignKey: 'idUser', constraints: false });
-
-// Usuario asignado -> Hoja de Ruta (1..n)
-Roadmap.belongsTo(User, { as: 'asignado', foreignKey: 'idUserAsignado', constraints: false });
-
-// Relación HojaRuta -> Paradas (1..n)
-Roadmap.hasMany(RoadmapStop, { foreignKey: 'roadmapId', as: 'paradas', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-RoadmapStop.belongsTo(Roadmap, { foreignKey: 'roadmapId' });
-
-// Relación Tarea <-> Usuario (vendedores y/o administradores enganchados a una tarea)
-Task.hasMany(TaskAssignee, { as: 'asignaciones', foreignKey: 'taskId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-TaskAssignee.belongsTo(Task, { foreignKey: 'taskId' });
-TaskAssignee.belongsTo(User, { foreignKey: 'idUser' });
-User.hasMany(TaskAssignee, { foreignKey: 'idUser', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Task.belongsToMany(User, { through: TaskAssignee, as: 'asignados', foreignKey: 'taskId', otherKey: 'idUser' });
-User.belongsToMany(Task, { through: TaskAssignee, as: 'tareasAsignadas', foreignKey: 'idUser', otherKey: 'taskId' });
-Task.belongsTo(User, { as: 'finalizadoPor', foreignKey: 'finalizadoPorId', constraints: false });
-
-// Relación EmpresaCliente -> Oportunidad (1..n)
-ClientCompany.hasMany(Opportunity, { foreignKey: 'clientCompanyId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Opportunity.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
-
-// Relación EmpresaCliente -> Objetivo (1..n)
-ClientCompany.hasMany(Objective, { foreignKey: 'clientCompanyId', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
-Objective.belongsTo(ClientCompany, { foreignKey: 'clientCompanyId' });
-
-// Usuario propietario -> Negocio (1..n)
-Opportunity.belongsTo(User, { as: 'propietarioUsuario', foreignKey: 'propietarioId', constraints: false });
-
-// Relación Oportunidad -> FormularioActividad (1..n)
-Opportunity.hasMany(activityForm, { foreignKey: 'opportunityId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-activityForm.belongsTo(Opportunity, { foreignKey: 'opportunityId' });
-
-// Relación FormularioActividad -> Tareas de Seguimiento (1..n)
-activityForm.hasMany(Task, { foreignKey: 'formularioActividadId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-Task.belongsTo(activityForm, { foreignKey: 'formularioActividadId' });
-
-// Relación FormularioActividad -> Archivos Adjuntos (1..n)
-activityForm.hasMany(attachmentFA, {
-  foreignKey: 'formularioActividadId',
-  as: 'archivos'
-});
-attachmentFA.belongsTo(activityForm, {
-  foreignKey: 'formularioActividadId'
-});
-
-// Relación FormularioActividad -> Servicio (1..n)
-activityForm.hasMany(service, {
-  foreignKey: 'formularioActividadId',
-  onDelete: 'CASCADE', 
-  onUpdate: 'CASCADE'
-});
-service.belongsTo(activityForm, {
-  foreignKey: 'formularioActividadId'
-});
-
-
-// ── Relaciones Órdenes de Servicio ──
-ServiceOrder.hasMany(ServiceOrderProduct, {
-  as: 'productosAplicados',
-  foreignKey: 'ordenServicioId',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-ServiceOrderProduct.belongsTo(ServiceOrder, {
-  foreignKey: 'ordenServicioId'
-});
-
-ServiceOrder.hasOne(ServiceEvaluation, {
-  as: 'evaluacion',
-  foreignKey: 'ordenServicioId',
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-ServiceEvaluation.belongsTo(ServiceOrder, {
-  foreignKey: 'ordenServicioId'
-});
+// ── Servicios de control de plagas ──
+Empresa.hasMany(OrdenServicio, { foreignKey: 'empresaId', as: 'ordenesServicio', ...nc });
+OrdenServicio.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa', ...nc });
+OrdenServicio.belongsTo(ItemCatalogo, { foreignKey: 'servicioId', as: 'servicio', ...nc });
+OrdenServicio.belongsTo(Oportunidad, { foreignKey: 'oportunidadId', as: 'oportunidad', ...nc });
+Oportunidad.hasMany(OrdenServicio, { foreignKey: 'oportunidadId', as: 'ordenesServicio', ...nc });
+OrdenServicio.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor', ...nc });
+OrdenServicio.belongsToMany(Empleado, { through: OrdenEmpleado, foreignKey: 'ordenServicioId', otherKey: 'empleadoId', as: 'tecnicos', ...nc });
+Empleado.belongsToMany(OrdenServicio, { through: OrdenEmpleado, foreignKey: 'empleadoId', otherKey: 'ordenServicioId', as: 'ordenes', ...nc });
+OrdenServicio.hasMany(ProductoAplicado, { foreignKey: 'ordenServicioId', as: 'productosAplicados', ...nc });
+ProductoAplicado.belongsTo(OrdenServicio, { foreignKey: 'ordenServicioId', ...nc });
+ProductoAplicado.belongsTo(ItemCatalogo, { foreignKey: 'itemId', as: 'item', ...nc });
+OrdenServicio.hasOne(EvaluacionServicio, { foreignKey: 'ordenServicioId', as: 'evaluacion', ...nc });
+EvaluacionServicio.belongsTo(OrdenServicio, { foreignKey: 'ordenServicioId', ...nc });
+OrdenServicio.hasMany(Actividad, { foreignKey: 'ordenServicioId', as: 'visitasTecnicas', ...nc });
+Actividad.belongsTo(OrdenServicio, { foreignKey: 'ordenServicioId', as: 'ordenServicio', ...nc });
+OrdenServicio.hasMany(Adjunto, { foreignKey: 'ordenServicioId', as: 'adjuntos', ...nc });
+Adjunto.belongsTo(OrdenServicio, { foreignKey: 'ordenServicioId', as: 'ordenServicio', ...nc });
 
 export {
   sequelize,
-  Client,
-  User,
-  ClientPhone,
-  ClientCompany,
-  Locality,
-  Province,
-  TypeProduct,
-  ProductLine,
-  Product,
-  CultivationType,
-  activityForm,
-  Opportunity,
-  Objective,
-  service,
-  attachmentFA,
-  Promotion,
-  Task,
-  TaskAssignee,
-  Roadmap,
-  RoadmapStop,
-  InternalNote,
-  ServiceOrder,
-  ServiceOrderProduct,
-  ServiceEvaluation,
-  Employee
+  Usuario, Provincia, Localidad, UsuarioLocalidad,
+  Empresa, Cultivo, EmpresaCultivo, Contacto, ContactoTelefono,
+  LineaProducto, ItemCatalogo,
+  Oportunidad, OportunidadItem, Actividad, Adjunto, Tarea, TareaAsignado,
+  HojaRuta, ParadaRuta, Objetivo, ObjetivoEmpresa, ObjetivoItem, ObjetivoPromocion,
+  Promocion, PromocionItem, NotaInterna, Notificacion,
+  Empleado, OrdenServicio, OrdenEmpleado, ProductoAplicado, EvaluacionServicio,
 };

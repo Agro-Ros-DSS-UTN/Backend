@@ -1,5 +1,6 @@
 /* eslint-disable */
 import nodemailer from 'nodemailer';
+import { escapeHtml as h } from '../utils/validacion.js';
 
 // Envío de recordatorios por email 48hs/24hs antes del vencimiento de una
 // tarea. Usa SMTP estándar (funciona con Gmail + "Contraseña de aplicación",
@@ -38,14 +39,15 @@ const getTransporter = () => {
 };
 
 const buildSubject = (task, hoursBefore) =>
-  `Recordatorio: "${task.titulo || 'Tarea'}" vence en ${hoursBefore}hs`;
+  `Recordatorio: "${String(task.titulo || 'Tarea').replace(/[\r\n]+/g, ' ').slice(0, 120)}" vence en ${hoursBefore}hs`;
 
+// Todo texto cargado por usuarios se escapa antes de ir al HTML del mail.
 const buildHtml = (task, user, hoursBefore) => `
   <div style="font-family: Arial, sans-serif; color: #0f172a;">
-    <p>Hola ${user?.nombreApellido || ''},</p>
-    <p>Te recordamos que la tarea <strong>"${task.titulo || 'Tarea sin título'}"</strong> vence en <strong>${hoursBefore} horas</strong> (${task.fechaVencimiento || ''} ${task.horaVencimiento || ''}hs).</p>
-    ${task.empresa ? `<p><strong>Empresa/Cliente:</strong> ${task.empresa}</p>` : ''}
-    ${task.notas ? `<p><strong>Notas:</strong> ${task.notas}</p>` : ''}
+    <p>Hola ${h(user?.nombreApellido)},</p>
+    <p>Te recordamos que la tarea <strong>"${h(task.titulo || 'Tarea sin título')}"</strong> vence en <strong>${hoursBefore} horas</strong> (${h(task.fechaVencimiento)} ${h(task.horaVencimiento)}hs).</p>
+    ${task.empresa?.razonSocial ? `<p><strong>Empresa/Cliente:</strong> ${h(task.empresa.razonSocial)}</p>` : ''}
+    ${task.notas ? `<p><strong>Notas:</strong> ${h(task.notas)}</p>` : ''}
     <p style="color:#64748b; font-size: 12px;">CRM Agroquímica Rosario</p>
   </div>
 `;
@@ -56,14 +58,14 @@ export const sendTaskReminderEmail = async (task, user, hoursBefore) => {
     warnNotConfigured();
     return { success: false, reason: 'not_configured' };
   }
-  if (!user?.direccionMail) {
+  if (!user?.email) {
     return { success: false, reason: 'user_without_email' };
   }
   try {
     const transporter = getTransporter();
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: user.direccionMail,
+      to: user.email,
       subject: buildSubject(task, hoursBefore),
       html: buildHtml(task, user, hoursBefore),
     });

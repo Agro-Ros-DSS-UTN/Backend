@@ -5,7 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "node server",
-    "start": "cross-env NODE_ENV=production node server"
+    "start": "cross-env NODE_ENV=production node server",
+    "db:status": "node scripts/db-migrate.mjs status",
+    "db:migrate": "node scripts/db-migrate.mjs up",
+    "db:audit": "node scripts/db-audit.mjs",
+    "db:crear-admin": "node scripts/crear-admin.mjs",
+    "seed:localidades": "node scripts/seed-localidades.mjs",
+    "test:seguridad": "node scripts/security-tests.mjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

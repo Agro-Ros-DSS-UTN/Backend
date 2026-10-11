@@ -87,3 +87,37 @@ _Próximamente._
 ## Documentación
 
 La especificación funcional completa y las minutas de reunión se encuentran en la carpeta de documentación del proyecto.
+
+---
+
+## Backend v2: puesta en marcha
+
+### Variables de entorno (`.env`, nunca en el repositorio)
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | sí | Conexión a MySQL |
+| `DB_SSL` | no (`true`) | Conexión cifrada |
+| `DB_SSL_CA` | recomendada | Certificado de la base para verificar el servidor |
+| `JWT_SECRET` | sí | 32+ caracteres aleatorios. Sin esto el servidor no arranca |
+| `FRONTEND_URL` | sí | Dominio(s) del frontend separados por coma (CORS) |
+| `JWT_EXPIRES_IN` / `JWT_LONG_EXPIRES_IN` | no (`8h` / `7d`) | Duración de la sesión normal y de "mantener sesión" |
+| `DB_AUTO_MIGRATE` | no (`false`) | Aplicar migraciones al arrancar. En producción, dejar apagado |
+| `TRUST_PROXY` | no | Saltos de proxy (Hostinger: `1`) para ver la IP real en el límite de intentos |
+| `SMTP_*`, `GOOGLE_*` | no | Recordatorios por mail y Google Calendar |
+
+### Comandos
+
+```bash
+npm run db:audit          # auditoría de solo lectura (sirve contra producción)
+npm run db:status         # migraciones aplicadas / pendientes
+npm run db:migrate        # aplica las pendientes (hace respaldo _bak_v1_* la primera vez)
+npm run seed:localidades  # provincias y localidades oficiales (Georef); --dry-run para simular
+npm run db:crear-admin -- <id> "<Nombre>"   # crea o reactiva un administrador
+npm run test:seguridad    # pruebas de seguridad (solo contra una base de prueba)
+npm start
+```
+
+Documentación: [`docs/MIGRACION_V2.md`](docs/MIGRACION_V2.md) (plan de migración y despliegue),
+[`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) (correcciones), [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md)
+(tabla → API → pantalla) y el diagrama [`docs/DiagramaMD-DSS-v2.1.drawio`](docs/DiagramaMD-DSS-v2.1.drawio).

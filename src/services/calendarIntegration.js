@@ -59,7 +59,7 @@ const getCalendarClient = () => {
 const buildEventTimes = (task) => {
   const fecha = task.fechaVencimiento;
   const hora = task.horaVencimiento || '09:00';
-  const start = new Date(`${fecha}T${hora}:00`);
+  const start = new Date(`${fecha}T${hora}:00-03:00`); // hora de Argentina
   const end = new Date(start.getTime() + 60 * 60 * 1000);
   return { startISO: start.toISOString(), endISO: end.toISOString() };
 };
@@ -77,7 +77,7 @@ export const createCalendarEventForAssignee = async (task, user) => {
   try {
     const calendar = getCalendarClient();
     const { startISO, endISO } = buildEventTimes(task);
-    const attendees = user?.direccionMail ? [{ email: user.direccionMail }] : [];
+    const attendees = user?.email ? [{ email: user.email }] : [];
 
     const event = await calendar.events.insert({
       calendarId: process.env.GOOGLE_CALENDAR_ID,

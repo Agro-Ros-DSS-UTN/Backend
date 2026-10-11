@@ -1,27 +1,40 @@
-/* eslint-disable */
-
+import fs from 'node:fs';
 import { Sequelize } from 'sequelize';
-import 'dotenv/config';
+import { env } from './env.js';
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME ,
-  process.env.DB_USER ,
-  process.env.DB_PASS ,
-  {
-    host: process.env.DB_HOST ,
-    port: process.env.DB_PORT , // 👈 Le pasamos el puerto de Aiven
-    dialect: 'mysql',
-    logging: false, 
-    dialectOptions: {
-      ssl: {
-        rejectUnauthorized: false // 👈 Esto permite conectar de forma segura sin descargar el archivo .pem
-      }
-    },
-    define: {
-      timestamps: false,
-      underscored: true, 
-    }
+const buildSsl = () => {
+  if (!env.db.ssl) return undefined;
+  const ssl = { rejectUnauthorized: env.db.sslRejectUnauthorized };
+  if (env.db.sslCa) {
+    // DB_SSL_CA puede ser la ruta al .pem o el certificado pegado en una línea con \n
+    ssl.ca = fs.existsSync(env.db.sslCa) ? fs.readFileSync(env.db.sslCa, 'utf8') : env.db.sslCa.replace(/\\n/g, '\n');
   }
-);
+  if (!ssl.rejectUnauthorized) {
+    console.warn('[db] SSL sin verificación de certificado (DB_SSL_REJECT_UNAUTHORIZED=false). Cargá DB_SSL_CA para verificar el servidor.');
+  }
+  return ssl;
+};
+
+const ssl = buildSsl();
+
+const sequelize = new Sequelize(env.db.name, env.db.user, env.db.pass, {
+  host: env.db.host,
+  port: env.db.port,
+  dialect: 'mysql',
+  logging: env.db.logging ? console.log : false,
+  // Todas las fechas y horas se guardan en UTC; el frontend las muestra en
+  // America/Argentina/Buenos_Aires.
+  timezone: '+00:00',
+  dialectOptions: {
+    ...(ssl ? { ssl } : {}),
+    dateStrings: false,
+  },
+  pool: { max: 10, min: 0, idle: 10000, acquire: 30000 },
+  define: {
+    timestamps: false,
+    underscored: true,
+    freezeTableName: true,
+  },
+});
 
 export default sequelize;

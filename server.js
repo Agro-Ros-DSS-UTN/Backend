@@ -1,114 +1,79 @@
-﻿/* eslint-disable */
-import express from 'express'
-import cors from 'cors'
-import cron from 'node-cron'
-import {
-  sequelize, 
-  Client, 
-  Opportunity, 
-  activityForm, 
-  User, 
-  ProductLine 
-} from './src/models/index.js'
-import 'dotenv/config'
-import clientRoutes from './src/routes/client.route.js'
-import userRoutes from './src/routes/user.route.js'
-import cityRoutes from './src/routes/locality.route.js'
-import productLineRoutes from './src/routes/productLine.route.js'
-import productRoutes from './src/routes/product.route.js'
-import serviceRoutes from './src/routes/service.route.js'
-import serviceOrderRoutes from './src/routes/serviceOrder.route.js'
-import activityFormRoutes from './src/routes/activityForm.route.js'
-import clientCompanyRoutes from './src/routes/clientCompany.route.js'
-import opportunityRoutes from './src/routes/opportunity.route.js'
-import taskRoutes from './src/routes/task.route.js'
-import roadmapRoutes from './src/routes/roadmap.route.js'
-import internalNoteRoutes from './src/routes/internalNote.route.js'
-import targetRoutes from './src/routes/objective.route.js'
-import promotionRoutes from './src/routes/promotion.route.js'
-import employeeRoutes from './src/routes/employee.route.js'
-import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.middleware.js'
-import { runTaskReminderSweep } from './src/jobs/taskReminders.job.js'
+import express from 'express';
+import cors from 'cors';
+import cron from 'node-cron';
+import { env, assertServerEnv } from './src/config/env.js';
+import { sequelize } from './src/models/index.js';
+import routes from './src/routes/index.js';
+import { authenticateAll } from './src/middlewares/auth.middleware.js';
+import { securityHeaders, apiLimiter } from './src/middlewares/security.middleware.js';
+import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.middleware.js';
+import { pendingMigrations, runMigrations } from './src/db/migrator.js';
+import { runTaskReminderSweep } from './src/jobs/taskReminders.job.js';
 
-const port = process.env.PORT || 3000
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+assertServerEnv();
 
-const app = express()
+const app = express();
+app.disable('x-powered-by');
+app.set('trust proxy', /^\d+$/.test(String(env.trustProxy)) ? Number(env.trustProxy) : env.trustProxy === 'true');
 
-app.use(cors({ origin: frontendUrl, credentials: true }))
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ limit: '50mb', extended: true }))
+app.use(securityHeaders);
+app.use(cors({
+  origin(origin, cb) {
+    // Sin Origin: llamadas del mismo servidor, curl o apps nativas (igual pasan por el token).
+    if (!origin || env.frontendOrigins.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 600,
+}));
+app.use(express.json({ limit: env.bodyLimit }));
+app.use(apiLimiter);
 
-app.use(clientRoutes)
-app.use(userRoutes) 
-app.use(cityRoutes)
-app.use(productLineRoutes)
-app.use('/productos', productRoutes)
-app.use(serviceRoutes)
-app.use(serviceOrderRoutes)
-app.use(activityFormRoutes)
-app.use('/clientCompany', clientCompanyRoutes)
-app.use(opportunityRoutes)
-app.use(taskRoutes)
-app.use(roadmapRoutes)
-app.use(internalNoteRoutes)
-app.use(targetRoutes)
-app.use(promotionRoutes)
-app.use(employeeRoutes)
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' })
-})
-
-app.get('/dashboard', async (req, res, next) => {
+app.get('/api/health', async (req, res) => {
   try {
-    const [clients, opportunities, activities, sellers, productLines] = await Promise.all([
-      Client ? Client.findAll() : [],
-      Opportunity ? Opportunity.findAll() : [],
-      activityForm ? activityForm.findAll() : [],
-      User ? User.findAll({ where: { role: 'vendedor' }, attributes: { exclude: ['password', 'profileImage'] } }) : [],
-      ProductLine ? ProductLine.findAll() : []
-    ]);
-
-    res.json({
-      clients,
-      opportunities,
-      activities,
-      sellers,
-      objectives: [],
-      monthlySales: [],
-      productLines
-    });
-  } catch (error) {
-    next(error);
+    await sequelize.authenticate();
+    res.json({ status: 'ok' });
+  } catch {
+    res.status(503).json({ status: 'db_unavailable' });
   }
 });
 
-app.use(notFoundHandler)
-app.use(errorHandler)
+app.use(authenticateAll);
+app.use(routes);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-async function startServer() {
+const start = async () => {
   try {
-    await sequelize.sync()
-    console.log('---------------------------------------------------------')
-    console.log('     ¡Conexión a MySQL exitosa y tablas sincronizadas!  ')
-    console.log('---------------------------------------------------------')
-
-    app.listen(port, () => {
-      console.log(`API corriendo en http://localhost:${port}`)
-    })
-
-    // Recordatorios de tareas (48hs/24hs antes del vencimiento, por mail +
-    // Google Calendar si están configurados — ver src/services/*). Corre una
-    // vez al arrancar y después cada 30 minutos; nunca tira abajo el server.
-    runTaskReminderSweep().catch((err) => console.error('[taskReminders] Error en el barrido inicial:', err.message))
-    cron.schedule('*/30 * * * *', () => {
-      runTaskReminderSweep().catch((err) => console.error('[taskReminders] Error en el barrido programado:', err.message))
-    })
+    await sequelize.authenticate();
   } catch (error) {
-    console.error("❌ ERROR CRÍTICO al conectar la base de datos:", error.original ? error.original : error)
-    process.exit(1)
+    console.error('[db] No se pudo conectar a MySQL:', error.original?.code || error.message);
+    process.exit(1);
   }
-}
 
-startServer()
+  // El esquema lo manejan las migraciones (src/db/migrations), nunca sequelize.sync().
+  const pendientes = await pendingMigrations(sequelize);
+  if (pendientes.length) {
+    if (env.autoMigrate) {
+      console.log(`[db] Aplicando ${pendientes.length} migraciones pendientes…`);
+      await runMigrations(sequelize, { log: (m) => console.log(`[db] ${m}`) });
+    } else {
+      console.error(`[db] Hay ${pendientes.length} migraciones pendientes (${pendientes.map((m) => m.nombre).join(', ')}).`);
+      console.error('[db] Ejecutá "npm run db:migrate" (con un respaldo previo) o definí DB_AUTO_MIGRATE=true.');
+      process.exit(1);
+    }
+  }
+
+  app.listen(env.port, () => console.log(`API CRM AgroRos en el puerto ${env.port}`));
+
+  // Recordatorios de tareas (mail 48 h / 24 h antes). Nunca tira abajo el servidor.
+  const barrido = () => runTaskReminderSweep().catch((err) => console.error('[taskReminders]', err.message));
+  barrido();
+  cron.schedule('*/30 * * * *', barrido);
+};
+
+start().catch((err) => {
+  console.error("[arranque] Error:", err);
+  process.exit(1);
+});
