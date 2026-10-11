@@ -115,6 +115,7 @@ npm run db:respaldo       # respaldo completo en respaldos/*.sql (solo lectura)
 npm run db:restaurar -- <archivo.sql> --destino=<base>   # deja la base igual al respaldo
 npm run db:ensayo         # copia producción a la base de ensayo, la migra y verifica (no toca producción)
 npm run dev:ensayo        # API local contra la base de ensayo, sin mails ni calendario
+npm run seed:localidades:ensayo   # localidades oficiales en la base de ensayo
 npm run db:status         # migraciones aplicadas / pendientes
 npm run db:migrate        # aplica las pendientes (hace respaldo _bak_v1_* la primera vez)
 npm run seed:localidades  # provincias + localidades de las 7 provincias de trabajo (Georef); --todas, --dry-run

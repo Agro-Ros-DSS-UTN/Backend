@@ -11,18 +11,30 @@
 //   node scripts/seed-localidades.mjs                → las 7 provincias de trabajo
 //   node scripts/seed-localidades.mjs --provincias=82,06,14   → solo esas provincias
 //   node scripts/seed-localidades.mjs --todas        → todo el país
+//   npm run seed:localidades:ensayo                  → lo mismo, sobre la base de ENSAYO (ENSAYO_DB_* del .env)
 //   node scripts/seed-localidades.mjs --solo-provincias       → sin internet: solo las 24 provincias
 //   node scripts/seed-localidades.mjs --archivo=localidades.json → desde un JSON descargado de Georef
 //
 // Se puede correr varias veces: no duplica ni borra datos de empresas.
+import 'dotenv/config';
 import fs from 'node:fs';
-import sequelize from '../src/config/database.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const [k, v] = a.replace(/^--/, '').split('=');
   return [k, v ?? true];
 }));
 const DRY = Boolean(args['dry-run']);
+
+// --ensayo: trabaja sobre la base de ensayo en vez de la del .env (producción).
+if (args.ensayo) {
+  if (!process.env.ENSAYO_DB_NAME || process.env.ENSAYO_DB_NAME === process.env.DB_NAME) {
+    console.error('Falta ENSAYO_DB_NAME en el .env (o es igual a DB_NAME).');
+    process.exit(1);
+  }
+  for (const k of ['NAME', 'USER', 'PASS', 'HOST', 'PORT']) if (process.env[`ENSAYO_DB_${k}`]) process.env[`DB_${k}`] = process.env[`ENSAYO_DB_${k}`];
+  console.log(`[ensayo] Base: ${process.env.DB_NAME}`);
+}
+const { default: sequelize } = await import('../src/config/database.js');
 const PREFERIDA = Number(args['provincia-preferida'] || 82); // Santa Fe
 
 // Códigos INDEC (los mismos que usa Georef).

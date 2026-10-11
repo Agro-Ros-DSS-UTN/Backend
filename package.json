@@ -15,6 +15,7 @@
     "dev:ensayo": "node scripts/servidor-ensayo.mjs",
     "db:crear-admin": "node scripts/crear-admin.mjs",
     "seed:localidades": "node scripts/seed-localidades.mjs",
+    "seed:localidades:ensayo": "node scripts/seed-localidades.mjs --ensayo",
     "test:seguridad": "node scripts/security-tests.mjs"
   },
   "dependencies": {
