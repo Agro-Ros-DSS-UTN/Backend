@@ -19,6 +19,7 @@ Las migraciones están en `src/db/migrations` y se aplican en orden. Cada una es
 | 7 | `0007_planificacion` | Hojas de ruta y paradas, objetivos con fechas y N:M, promociones con ítems, notas, notificaciones. | Semana del objetivo → fechas lunes a domingo |
 | 8 | `0008_servicios` | Órdenes vinculadas a empresa/servicio/técnicos; empleados con rol (técnico, **supervisor**, ayudante, chofer, administrativo); evaluación con satisfacción. | Técnicos escritos a mano que no existían se dan de alta como empleados |
 | 9 | `0009_integridad` | Crea 56 claves foráneas con reglas explícitas, corrige referencias huérfanas y quita las tablas v1 que ya no se usan (con su copia `_bak_v1_*`). | Ningún dato de negocio se pierde |
+| 10 | `0010_emails_de_relleno` | Emails inventados en la carga inicial (`no-email-…@ejemplo.com`) y valores como "2" quedan vacíos. Si era un texto escrito a mano no válido, se copia a las observaciones. | Contactos, empleados y usuarios · los originales quedan en `_bak_v1_*` |
 
 Las copias `_bak_v1_*` quedan en la base. Cuando la v2 esté funcionando bien en producción unas semanas,
 se pueden borrar a mano (no lo hace ningún script).
@@ -106,6 +107,13 @@ que esté migrada): son unos minutos. Conviene hacerlo fuera del horario de trab
 
 Para las pruebas automatizadas hay `npm run test:seguridad`, pero **solo contra una base de prueba**
 (crea y modifica registros).
+
+## Localidades que la carga automática no pudo unir
+
+`npm run localidades:resolver` (simulación) y `npm run localidades:resolver -- --aplicar`:
+- une las localidades manuales con nombre distinto al oficial (Monte de Oca → Montes de Oca, etc.) según una lista revisada contra Georef;
+- para nombres repetidos en varias provincias (Villa Fontana, San Pedro) decide por la dirección de la empresa y la característica telefónica de sus contactos; si no hay pistas, no toca nada;
+- borra los códigos postales heredados de la v1 (no eran reales) y las ciudades repetidas de Georef como "entidad".
 
 ## Revisión manual después de migrar
 

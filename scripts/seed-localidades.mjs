@@ -136,7 +136,12 @@ try {
       console.log('Descargando localidades de Georef (datos.gob.ar)…');
       oficiales = await descargarLocalidades(filtro);
     }
-    console.log(`${oficiales.length} localidades oficiales recibidas.`);
+    // Georef repite algunas ciudades como "entidad" (id de 10 dígitos) además de la
+    // localidad (8 dígitos): se deja solo la localidad para no duplicar el selector.
+    const conLocalidad = new Set(oficiales.filter((l) => l.id.length === 8).map((l) => `${norm(l.nombre)}|${l.provinciaId}`));
+    const antes = oficiales.length;
+    oficiales = oficiales.filter((l) => !(l.id.length === 10 && conLocalidad.has(`${norm(l.nombre)}|${l.provinciaId}`)));
+    console.log(`${oficiales.length} localidades oficiales recibidas${antes > oficiales.length ? ` (${antes - oficiales.length} duplicadas como "entidad" descartadas)` : ''}.`);
 
     // ── Unir las localidades manuales con la oficial equivalente ──
     const porNombre = new Map();
@@ -150,6 +155,11 @@ try {
     for (const m of manuales) {
       let candidatas = porNombre.get(norm(m.nombre)) || [];
       if (m.provincia_id && candidatas.length > 1) candidatas = candidatas.filter((c) => c.provinciaId === Number(m.provincia_id));
+      if (candidatas.length > 1) {
+        // Misma localidad partida en componentes: se prefiere la de 8 dígitos (localidad) a la entidad.
+        const simples = candidatas.filter((c) => c.id.length === 8);
+        if (simples.length === 1) candidatas = simples;
+      }
       if (candidatas.length > 1) {
         const posibles = provinciasPorCp(m.codigo_postal);
         const porCp = posibles ? candidatas.filter((c) => posibles.includes(c.provinciaId)) : [];
