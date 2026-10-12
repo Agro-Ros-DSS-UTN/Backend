@@ -147,5 +147,5 @@ Para descartarla: `git worktree remove "C:\CRM AgroRos v2\backend"` y `git branc
 Cuando se suba a GitHub, la rama se trae con un `git fetch` normal.
 
 Documentación: [`docs/MIGRACION_V2.md`](docs/MIGRACION_V2.md) (plan de migración y despliegue),
-[`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) (correcciones), [`docs/DECISIONES.md`](docs/DECISIONES.md) (puntos decididos el 11/10), [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md)
+[`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) (correcciones), [`docs/DECISIONES.md`](docs/DECISIONES.md) (puntos decididos el 11/10), [`docs/ESTRUCTURA.md`](docs/ESTRUCTURA.md) (qué hay en cada carpeta), [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md)
 (tabla → API → pantalla) y el diagrama [`docs/DiagramaMD-DSS-v2.1.drawio`](docs/DiagramaMD-DSS-v2.1.drawio).
