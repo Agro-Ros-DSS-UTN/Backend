@@ -92,7 +92,7 @@ La especificación funcional completa y las minutas de reunión se encuentran en
 
 ## Backend v2: puesta en marcha
 
-### Variables de entorno (`.env`, nunca en el repositorio)
+### Variables de entorno 
 
 | Variable | Obligatoria | Descripción |
 |---|---|---|
