@@ -17,6 +17,7 @@
     "seed:localities": "node scripts/seed-localities.mjs",
     "seed:localities:rehearsal": "node scripts/seed-localities.mjs --rehearsal",
     "localities:resolve": "node scripts/resolve-localities.mjs",
+    "companies:afa": "node scripts/afa-structure.mjs",
     "test:security": "node scripts/security-tests.mjs"
   },
   "dependencies": {
