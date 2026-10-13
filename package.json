@@ -19,6 +19,7 @@
     "localities:resolve": "node scripts/resolve-localities.mjs",
     "companies:afa": "node scripts/afa-structure.mjs",
     "companies:cleanup": "node scripts/cleanup-companies.mjs",
+    "companies:cuit": "node scripts/fill-cuits.mjs",
     "test:security": "node scripts/security-tests.mjs"
   },
   "dependencies": {

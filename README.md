@@ -119,6 +119,7 @@ npm run seed:localities:rehearsal  # localidades oficiales en la base de ensayo
 npm run localities:resolve         # une las localidades manuales que quedaron sueltas (--apply)
 npm run companies:afa              # ordena AFA en regiones y sedes con datos de afascl.coop (--apply)
 npm run companies:cleanup          # duplicados, registros de prueba, empresas con sedes y localidades (--apply)
+npm run companies:cuit             # CUIT reales (con fuente) donde había uno inventado (--apply)
 npm run db:status         # migraciones aplicadas / pendientes
 npm run db:migrate        # aplica las pendientes (hace respaldo _bak_v1_* la primera vez)
 npm run seed:localities   # provincias + localidades de las 7 provincias de trabajo (Georef); --all, --dry-run
