@@ -10,9 +10,9 @@ import { migrationStatus, runMigrations, rollbackLast } from '../src/db/migrator
 const [cmd = 'status', arg] = process.argv.slice(2);
 try {
   if (cmd === 'status') {
-    for (const m of await migrationStatus(sequelize)) console.log(`${m.aplicada ? '✔' : '·'} ${m.nombre}`);
+    for (const m of await migrationStatus(sequelize)) console.log(`${m.applied ? '✔' : '·'} ${m.name}`);
   } else if (cmd === 'up') {
-    const to = arg ? (await migrationStatus(sequelize)).map((m) => m.nombre).filter((n) => n.startsWith(arg)).pop() : undefined;
+    const to = arg ? (await migrationStatus(sequelize)).map((m) => m.name).filter((n) => n.startsWith(arg)).pop() : undefined;
     await runMigrations(sequelize, { to });
   } else if (cmd === 'down') {
     await rollbackLast(sequelize);

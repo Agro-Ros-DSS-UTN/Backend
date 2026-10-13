@@ -1,20 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { Usuario } from '../models/index.js';
+import { User } from '../models/index.js';
 import { AppError, forbidden } from '../utils/http.js';
 
 // Rol canónico: la base guarda "administrador" | "vendedor"; en código se usa
 // "admin" | "vendedor" para no repetir comparaciones con variantes.
-export const normalizeRole = (rol) => {
-  const r = String(rol || '').trim().toLowerCase();
+export const normalizeRole = (role) => {
+  const r = String(role || '').trim().toLowerCase();
   if (['admin', 'administrador', 'administracion', 'administración'].includes(r)) return 'admin';
   if (r === 'vendedor') return 'vendedor';
-  return 'desconocido';
+  return 'unknown';
 };
 
-export const generateToken = (usuario, { long = false } = {}) =>
+export const generateToken = (user, { long = false } = {}) =>
   jwt.sign(
-    { sub: usuario.idUser, role: normalizeRole(usuario.rol), tv: usuario.tokenVersion || 0 },
+    { sub: user.idUser, role: normalizeRole(user.role), tv: user.tokenVersion || 0 },
     env.jwt.secret,
     { algorithm: 'HS256', expiresIn: long ? env.jwt.longExpiresIn : env.jwt.expiresIn, issuer: env.jwt.issuer, audience: env.jwt.audience }
   );
@@ -28,8 +28,8 @@ export const invalidateUserCache = (idUser) => cache.delete(String(idUser));
 const loadUser = async (idUser) => {
   const hit = cache.get(idUser);
   if (hit && hit.expires > Date.now()) return hit.user;
-  const u = await Usuario.scope('auth').findByPk(idUser, { attributes: ['idUser', 'nombreApellido', 'rol', 'estadoCuenta', 'tokenVersion'] });
-  const user = u ? { idUser: u.idUser, nombreApellido: u.nombreApellido, role: normalizeRole(u.rol), activo: u.estadoCuenta === 'Activo', tokenVersion: u.tokenVersion } : null;
+  const u = await User.scope('auth').findByPk(idUser, { attributes: ['idUser', 'fullName', 'role', 'accountStatus', 'tokenVersion'] });
+  const user = u ? { idUser: u.idUser, fullName: u.fullName, role: normalizeRole(u.role), active: u.accountStatus === 'Activo', tokenVersion: u.tokenVersion } : null;
   cache.set(idUser, { user, expires: Date.now() + TTL_MS });
   return user;
 };
@@ -50,7 +50,7 @@ export const verifyToken = async (req, res, next) => {
     }
     const user = await loadUser(String(payload.sub));
     if (!user) throw unauthorized('El usuario ya no existe');
-    if (!user.activo) throw unauthorized('La cuenta está desactivada');
+    if (!user.active) throw unauthorized('La cuenta está desactivada');
     if ((payload.tv || 0) !== (user.tokenVersion || 0)) throw unauthorized('La sesión fue cerrada por un cambio de credenciales');
     req.user = user;
     next();
@@ -61,7 +61,7 @@ export const verifyToken = async (req, res, next) => {
 
 // Rutas que no requieren sesión. Todo lo demás pasa por verifyToken.
 const PUBLIC = [
-  ['POST', /^\/(auth|users)\/login\/?$/],
+  ['POST', /^\/auth\/login\/?$/],
   ['GET', /^\/api\/health\/?$/],
 ];
 

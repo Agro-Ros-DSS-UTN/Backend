@@ -1,85 +1,85 @@
 import { Op, fn, col, literal, QueryTypes } from 'sequelize';
 
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 import {
-  sequelize, Empresa, Oportunidad, Actividad, Usuario, LineaProducto, Objetivo, OrdenServicio, EvaluacionServicio, Tarea, Localidad, Provincia,
+  sequelize, Company, Opportunity, Activity, User, ProductLine, Objective, ServiceOrder, ServiceEvaluation, Task, Locality, Province,
 } from '../models/index.js';
-import { ESTADOS_OPORTUNIDAD } from '../models/comercial.model.js';
+import { OPPORTUNITY_STATUSES } from '../models/commercial.model.js';
 import { asyncHandler } from '../utils/http.js';
-import { serializeOportunidad, includeOportunidad } from './oportunidad.controller.js';
-import { serializeActividad } from './actividad.controller.js';
-import { serializeEmpresa } from './empresa.controller.js';
-import { serializeObjetivo } from './objetivo.controller.js';
+import { serializeOpportunity, includeOpportunity } from './opportunity.controller.js';
+import { serializeActivity } from './activity.controller.js';
+import { serializeCompany } from './company.controller.js';
+import { serializeObjective } from './objective.controller.js';
 
 // Tablero general de la administración (antes /dashboard sin autenticación).
 export const general = asyncHandler(async (req, res) => {
-  const hace12 = new Date();
-  hace12.setUTCMonth(hace12.getUTCMonth() - 11, 1);
-  hace12.setUTCHours(3, 0, 0, 0);
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setUTCMonth(twelveMonthsAgo.getUTCMonth() - 11, 1);
+  twelveMonthsAgo.setUTCHours(3, 0, 0, 0);
 
-  const [empresas, oportunidades, actividades, vendedores, lineas, objetivos, ventasMes, porEstado, ordenes, satisfaccion, tareasPendientes] = await Promise.all([
-    Empresa.findAll({ include: [{ model: Localidad, as: 'localidad', include: [{ model: Provincia, as: 'provincia' }] }], order: [['razonSocial', 'ASC']] }),
-    Oportunidad.findAll({ include: includeOportunidad, order: [['id', 'DESC']], limit: 1000 }),
-    Actividad.findAll({
+  const [companies, opportunities, activities, sellers, productLines, objectives, monthlySales, byStatus, orders, satisfaction, pendingTasks] = await Promise.all([
+    Company.findAll({ include: [{ model: Locality, as: 'locality', include: [{ model: Province, as: 'province' }] }], order: [['legalName', 'ASC']] }),
+    Opportunity.findAll({ include: includeOpportunity, order: [['id', 'DESC']], limit: 1000 }),
+    Activity.findAll({
       include: [
-        { model: Oportunidad, as: 'oportunidad', attributes: ['id', 'titulo', 'estado', 'empresaId'], paranoid: false, include: [{ model: Empresa, as: 'empresa', attributes: ['id', 'razonSocial'], paranoid: false }] },
-        { model: Usuario, as: 'autor', attributes: ['idUser', 'nombreApellido'] },
+        { model: Opportunity, as: 'opportunity', attributes: ['id', 'title', 'status', 'companyId'], paranoid: false, include: [{ model: Company, as: 'company', attributes: ['id', 'legalName'], paranoid: false }] },
+        { model: User, as: 'author', attributes: ['idUser', 'fullName'] },
       ],
-      order: [['fechaHora', 'DESC']],
+      order: [['occurredAt', 'DESC']],
       limit: 500,
     }),
-    Usuario.findAll({ where: { rol: 'vendedor' }, order: [['nombreApellido', 'ASC']] }),
-    LineaProducto.findAll({ order: [['nombre', 'ASC']] }),
-    Objetivo.findAll({
-      where: { fechaFin: { [Op.gte]: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10) } },
-      include: [{ model: Usuario, as: 'vendedor', attributes: ['idUser', 'nombreApellido', 'rol'] }, { model: Empresa, as: 'empresas', attributes: ['id', 'razonSocial'], through: { attributes: [] } }],
+    User.findAll({ where: { role: 'vendedor' }, order: [['fullName', 'ASC']] }),
+    ProductLine.findAll({ order: [['name', 'ASC']] }),
+    Objective.findAll({
+      where: { endDate: { [Op.gte]: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10) } },
+      include: [{ model: User, as: 'seller', attributes: ['idUser', 'fullName', 'role'] }, { model: Company, as: 'companies', attributes: ['id', 'legalName'], through: { attributes: [] } }],
     }),
-    Actividad.findAll({
-      attributes: [[fn('DATE_FORMAT', literal("CONVERT_TZ(fecha_hora, '+00:00', '-03:00')"), '%Y-%m'), 'mes'], [fn('SUM', col('monto_venta')), 'total'], [fn('COUNT', col('id')), 'actividades']],
-      where: { fechaHora: { [Op.gte]: hace12 } },
-      group: [literal('mes')],
-      order: [[literal('mes'), 'ASC']],
+    Activity.findAll({
+      attributes: [[fn('DATE_FORMAT', literal("CONVERT_TZ(occurred_at, '+00:00', '-03:00')"), '%Y-%m'), 'month'], [fn('SUM', col('sale_amount')), 'total'], [fn('COUNT', col('id')), 'activities']],
+      where: { occurredAt: { [Op.gte]: twelveMonthsAgo } },
+      group: [literal('month')],
+      order: [[literal('month'), 'ASC']],
       raw: true,
     }),
-    Oportunidad.findAll({ attributes: ['estado', [fn('COUNT', col('id')), 'cantidad'], [fn('SUM', col('volumen_potencial')), 'volumen']], group: ['estado'], raw: true }),
-    OrdenServicio.count({ where: { estado: 'Completada', fechaRealizada: { [Op.gte]: hace12.toISOString().slice(0, 10) } } }),
-    EvaluacionServicio.findOne({ attributes: [[fn('AVG', col('satisfaccion_cliente')), 'promedio'], [fn('COUNT', col('satisfaccion_cliente')), 'n']], raw: true }),
-    Tarea.count({ where: { estado: 'Pendiente' } }),
+    Opportunity.findAll({ attributes: ['status', [fn('COUNT', col('id')), 'quantity'], [fn('SUM', col('potential_volume')), 'volume']], group: ['status'], raw: true }),
+    ServiceOrder.count({ where: { status: 'Completada', completedDate: { [Op.gte]: twelveMonthsAgo.toISOString().slice(0, 10) } } }),
+    ServiceEvaluation.findOne({ attributes: [[fn('AVG', col('customer_satisfaction')), 'average'], [fn('COUNT', col('customer_satisfaction')), 'n']], raw: true }),
+    Task.count({ where: { status: 'Pendiente' } }),
   ]);
 
   // Oportunidades que incluyen productos de cada línea (para el gráfico por línea).
-  const porLinea = await sequelize.query(
-    `SELECT i.linea_id AS linea, COUNT(DISTINCT oi.oportunidad_id) AS n
-       FROM oportunidad_items oi JOIN items_catalogo i ON i.id = oi.item_id
-      WHERE i.linea_id IS NOT NULL GROUP BY i.linea_id`,
+  const byLine = await sequelize.query(
+    `SELECT i.product_line_id AS productLine, COUNT(DISTINCT oi.opportunity_id) AS n
+       FROM opportunity_items oi JOIN catalog_items i ON i.id = oi.item_id
+      WHERE i.product_line_id IS NOT NULL GROUP BY i.product_line_id`,
     { type: QueryTypes.SELECT },
   );
-  const oppsPorLinea = Object.fromEntries(porLinea.map((r) => [r.linea, r.n]));
+  const oppsByLine = Object.fromEntries(byLine.map((r) => [r.productLine, r.n]));
 
-  const embudo = ESTADOS_OPORTUNIDAD.map((estado) => {
-    const r = porEstado.find((x) => x.estado === estado);
-    return { estado, cantidad: Number(r?.cantidad || 0), volumen: Number(r?.volumen || 0) };
+  const funnel = OPPORTUNITY_STATUSES.map((status) => {
+    const r = byStatus.find((x) => x.status === status);
+    return { status, quantity: Number(r?.quantity || 0), volume: Number(r?.volume || 0) };
   });
 
   res.json({
     data: {
       kpis: {
-        empresas: empresas.length,
-        oportunidadesAbiertas: embudo.filter((e) => ['Prospecto', 'Contactado', 'Cotizado'].includes(e.estado)).reduce((a, e) => a + e.cantidad, 0),
-        ordenesRealizadas12m: ordenes,
-        satisfaccionPromedio: satisfaccion?.n ? Math.round(Number(satisfaccion.promedio) * 10) / 10 : null,
-        tareasPendientes,
+        companies: companies.length,
+        openOpportunities: funnel.filter((e) => ['Prospecto', 'Contactado', 'Cotizado'].includes(e.status)).reduce((a, e) => a + e.quantity, 0),
+        completedOrders12m: orders,
+        averageSatisfaction: satisfaction?.n ? Math.round(Number(satisfaction.average) * 10) / 10 : null,
+        pendingTasks,
       },
-      embudo,
-      ventasPorMes: ventasMes.map((v) => ({ mes: v.mes, total: Number(v.total || 0), actividades: Number(v.actividades) })),
+      funnel,
+      salesByMonth: monthlySales.map((v) => ({ month: v.month, total: Number(v.total || 0), activities: Number(v.activities) })),
     },
     // compatibilidad con la pantalla actual del tablero
-    clients: empresas.map(serializeEmpresa),
-    opportunities: oportunidades.map(serializeOportunidad),
-    activities: actividades.map(serializeActividad),
-    sellers: vendedores.map((u) => ({ idUser: u.idUser, nombreApellido: u.nombreApellido, email: u.email, estadoCuenta: u.estadoCuenta, role: 'vendedor' })),
-    objectives: await Promise.all(objetivos.map((o) => serializeObjetivo(o))),
-    monthlySales: ventasMes.map((v) => ({ mes: MESES[Number(v.mes.slice(5, 7)) - 1], periodo: v.mes, ventas: Number(v.total || 0) })),
-    productLines: lineas.map((l) => ({ id: l.id, linea: l.nombre, nombreLinea: l.nombre, interacciones: Number(oppsPorLinea[l.id] || 0) })),
+    clients: companies.map(serializeCompany),
+    opportunities: opportunities.map(serializeOpportunity),
+    activities: activities.map(serializeActivity),
+    sellers: sellers.map((u) => ({ idUser: u.idUser, fullName: u.fullName, email: u.email, accountStatus: u.accountStatus, role: 'vendedor' })),
+    objectives: await Promise.all(objectives.map((o) => serializeObjective(o))),
+    monthlySales: monthlySales.map((v) => ({ month: MONTHS[Number(v.month.slice(5, 7)) - 1], period: v.month, sales: Number(v.total || 0) })),
+    productLines: productLines.map((l) => ({ id: l.id, productLine: l.name, lineName: l.name, interactions: Number(oppsByLine[l.id] || 0) })),
   });
 });

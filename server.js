@@ -53,13 +53,13 @@ const start = async () => {
   }
 
   // El esquema lo manejan las migraciones (src/db/migrations), nunca sequelize.sync().
-  const pendientes = await pendingMigrations(sequelize);
-  if (pendientes.length) {
+  const pending = await pendingMigrations(sequelize);
+  if (pending.length) {
     if (env.autoMigrate) {
-      console.log(`[db] Aplicando ${pendientes.length} migraciones pendientes…`);
+      console.log(`[db] Aplicando ${pending.length} migraciones pendientes…`);
       await runMigrations(sequelize, { log: (m) => console.log(`[db] ${m}`) });
     } else {
-      console.error(`[db] Hay ${pendientes.length} migraciones pendientes (${pendientes.map((m) => m.nombre).join(', ')}).`);
+      console.error(`[db] Hay ${pending.length} migraciones pendientes (${pending.map((m) => m.name).join(', ')}).`);
       console.error('[db] Ejecutá "npm run db:migrate" (con un respaldo previo) o definí DB_AUTO_MIGRATE=true.');
       process.exit(1);
     }
@@ -68,9 +68,9 @@ const start = async () => {
   app.listen(env.port, () => console.log(`API CRM AgroRos en el puerto ${env.port}`));
 
   // Recordatorios de tareas (mail 48 h / 24 h antes). Nunca tira abajo el servidor.
-  const barrido = () => runTaskReminderSweep().catch((err) => console.error('[taskReminders]', err.message));
-  barrido();
-  cron.schedule('*/30 * * * *', barrido);
+  const sweep = () => runTaskReminderSweep().catch((err) => console.error('[taskReminders]', err.message));
+  sweep();
+  cron.schedule('*/30 * * * *', sweep);
 };
 
 start().catch((err) => {

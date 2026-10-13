@@ -1,6 +1,6 @@
 /* eslint-disable */
 import nodemailer from 'nodemailer';
-import { escapeHtml as h } from '../utils/validacion.js';
+import { escapeHtml as h } from '../utils/validation.js';
 
 // Envío de recordatorios por email 48hs/24hs antes del vencimiento de una
 // tarea. Usa SMTP estándar (funciona con Gmail + "Contraseña de aplicación",
@@ -39,15 +39,15 @@ const getTransporter = () => {
 };
 
 const buildSubject = (task, hoursBefore) =>
-  `Recordatorio: "${String(task.titulo || 'Tarea').replace(/[\r\n]+/g, ' ').slice(0, 120)}" vence en ${hoursBefore}hs`;
+  `Recordatorio: "${String(task.title || 'Tarea').replace(/[\r\n]+/g, ' ').slice(0, 120)}" vence en ${hoursBefore}hs`;
 
 // Todo texto cargado por usuarios se escapa antes de ir al HTML del mail.
 const buildHtml = (task, user, hoursBefore) => `
   <div style="font-family: Arial, sans-serif; color: #0f172a;">
-    <p>Hola ${h(user?.nombreApellido)},</p>
-    <p>Te recordamos que la tarea <strong>"${h(task.titulo || 'Tarea sin título')}"</strong> vence en <strong>${hoursBefore} horas</strong> (${h(task.fechaVencimiento)} ${h(task.horaVencimiento)}hs).</p>
-    ${task.empresa?.razonSocial ? `<p><strong>Empresa/Cliente:</strong> ${h(task.empresa.razonSocial)}</p>` : ''}
-    ${task.notas ? `<p><strong>Notas:</strong> ${h(task.notas)}</p>` : ''}
+    <p>Hola ${h(user?.fullName)},</p>
+    <p>Te recordamos que la tarea <strong>"${h(task.title || 'Tarea sin título')}"</strong> vence en <strong>${hoursBefore} horas</strong> (${h(task.dueDate)} ${h(task.dueTime)}hs).</p>
+    ${task.company?.legalName ? `<p><strong>Empresa/Cliente:</strong> ${h(task.company.legalName)}</p>` : ''}
+    ${task.notes ? `<p><strong>Notas:</strong> ${h(task.notes)}</p>` : ''}
     <p style="color:#64748b; font-size: 12px;">CRM Agroquímica Rosario</p>
   </div>
 `;

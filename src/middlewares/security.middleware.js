@@ -50,14 +50,14 @@ export const rateLimit = ({ windowMs, max, key = (req) => req.ip, message, skipS
 };
 
 // Login: 5 intentos fallidos por usuario cada 15 min y 30 por IP.
-export const loginLimiterPorUsuario = rateLimit({
+export const loginLimiterByUser = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   key: (req) => `u:${String(req.body?.idUser || req.body?.id || '').toLowerCase()}`,
   message: 'Demasiados intentos fallidos para este usuario. Probá de nuevo en 15 minutos.',
   skipSuccessful: true,
 });
-export const loginLimiterPorIp = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, skipSuccessful: true });
+export const loginLimiterByIp = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, skipSuccessful: true });
 
 // Límite general de la API por IP.
 export const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 300 });

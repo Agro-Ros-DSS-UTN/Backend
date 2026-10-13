@@ -3,7 +3,7 @@
 // En una base vacía (desarrollo) crea las tablas v1 para que las migraciones siguientes
 // sigan un único camino.
 
-export const descripcion = "Punto de partida: esquema v1 (sequelize.sync)";
+export const description = "Punto de partida: esquema v1 (sequelize.sync)";
 
 const V1_TABLES = [
   "CREATE TABLE IF NOT EXISTS `actividades` (\n  `id_formulario` int NOT NULL AUTO_INCREMENT,\n  `tipo_contacto` varchar(100) NOT NULL,\n  `descripcion` text,\n  `monto_venta` decimal(12,2),\n  `fecha_hora` datetime,\n  `empresa` varchar(200),\n  `opportunity_id` int,\n  `id_user` varchar(20),\n  `archivo_adjunto` mediumtext,\n  `autor_nombre` varchar(150),\n  PRIMARY KEY (`id_formulario`),\n  KEY `opportunity_id` (`opportunity_id`)\n) ENGINE=InnoDB",

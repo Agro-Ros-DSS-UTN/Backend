@@ -144,19 +144,19 @@ export const createSchemaHelpers = (sequelize) => {
   // VARCHAR con collation distinta y dan "Illegal mix of collations" al comparar
   // columnas de tablas creadas en distintos momentos. Se usa el de la base si es
   // utf8mb4; si no, utf8mb4_unicode_ci.
-  let destino;
+  let destination;
   const targetCollation = async () => {
-    if (destino) return destino;
+    if (destination) return destination;
     const r = await one('SELECT DEFAULT_CHARACTER_SET_NAME AS cs, DEFAULT_COLLATION_NAME AS co FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?', [db]);
-    destino = r?.cs === 'utf8mb4' ? { cs: r.cs, co: r.co } : { cs: 'utf8mb4', co: 'utf8mb4_unicode_ci' };
-    return destino;
+    destination = r?.cs === 'utf8mb4' ? { cs: r.cs, co: r.co } : { cs: 'utf8mb4', co: 'utf8mb4_unicode_ci' };
+    return destination;
   };
 
   // Convierte al juego de caracteres único las tablas (o columnas) que difieran.
   // Debe correrse sin FKs (las FKs v1 se sueltan antes en 0003).
   const normalizeCollation = async () => {
     const { cs, co } = await targetCollation();
-    const distintas = await rows(
+    const different = await rows(
       `SELECT DISTINCT t.TABLE_NAME AS t FROM information_schema.TABLES t
          LEFT JOIN information_schema.COLUMNS c
            ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME AND c.COLLATION_NAME IS NOT NULL AND c.COLLATION_NAME <> ?
@@ -164,8 +164,8 @@ export const createSchemaHelpers = (sequelize) => {
           AND (t.TABLE_COLLATION <> ? OR c.COLUMN_NAME IS NOT NULL)`,
       [co, db, co]
     );
-    for (const { t } of distintas) await q(`ALTER TABLE ${id(t)} CONVERT TO CHARACTER SET ${cs} COLLATE ${co}`);
-    return { tablas: distintas.map((r) => r.t), collation: co };
+    for (const { t } of different) await q(`ALTER TABLE ${id(t)} CONVERT TO CHARACTER SET ${cs} COLLATE ${co}`);
+    return { tables: different.map((r) => r.t), collation: co };
   };
 
   const createTable = async (table, body) => {
@@ -191,10 +191,10 @@ export const createSchemaHelpers = (sequelize) => {
   // acentos ('activo' → 'Activo', 'Reunión' → 'reunion'). Con collation *_ci esos
   // valores son "iguales" y el motor puede no escribir el cambio; por eso se pasa
   // por un valor intermedio con un carácter de control adelante.
-  const setExacto = async (table, column, expr, where = '1=1') => {
-    const marca = 'CHAR(1 USING utf8mb4)';
-    await q(`UPDATE ${id(table)} SET ${id(column)} = CONCAT(${marca}, ${expr}) WHERE ${where}`);
-    await q(`UPDATE ${id(table)} SET ${id(column)} = SUBSTRING(${id(column)}, 2) WHERE LEFT(${id(column)}, 1) = ${marca}`);
+  const setExact = async (table, column, expr, where = '1=1') => {
+    const brand = 'CHAR(1 USING utf8mb4)';
+    await q(`UPDATE ${id(table)} SET ${id(column)} = CONCAT(${brand}, ${expr}) WHERE ${where}`);
+    await q(`UPDATE ${id(table)} SET ${id(column)} = SUBSTRING(${id(column)}, 2) WHERE LEFT(${id(column)}, 1) = ${brand}`);
   };
 
   // Copia una tabla completa a _bak_v1_<tabla> (estructura + datos, sin FKs).
@@ -212,6 +212,6 @@ export const createSchemaHelpers = (sequelize) => {
     renameTable, renameColumn, modifyColumn, addColumn, dropColumn,
     foreignKeys, dropForeignKeysOn, dropAllForeignKeys,
     indexes, addIndex, dropIndexesOn, addForeignKey, primaryKey,
-    createTable, dropTable, backupTable, targetCollation, normalizeCollation, setExacto,
+    createTable, dropTable, backupTable, targetCollation, normalizeCollation, setExact,
   };
 };

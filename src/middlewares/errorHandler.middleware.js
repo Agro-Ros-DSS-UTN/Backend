@@ -7,7 +7,7 @@ export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err);
 
   if (err instanceof AppError) {
-    return res.status(err.status).json({ message: err.message, code: err.code, fields: err.fields, ...(err.existente ? { existente: err.existente } : {}) });
+    return res.status(err.status).json({ message: err.message, code: err.code, fields: err.fields, ...(err.existing ? { existing: err.existing } : {}) });
   }
 
   if (err.type === 'entity.too.large') {
@@ -25,11 +25,11 @@ export const errorHandler = (err, req, res, next) => {
         fields: Object.fromEntries((err.errors || []).map((e) => [e.path, e.validatorKey || e.message])),
       });
     case 'SequelizeUniqueConstraintError':
-      return res.status(409).json({ message: 'Ya existe un registro con esos datos', code: 'DUPLICATE', fields: Object.fromEntries((err.errors || []).map((e) => [e.path, 'duplicado'])) });
+      return res.status(409).json({ message: 'Ya existe un registro con esos datos', code: 'DUPLICATE', fields: Object.fromEntries((err.errors || []).map((e) => [e.path, 'duplicate'])) });
     case 'SequelizeForeignKeyConstraintError': {
-      const borrando = req.method === 'DELETE';
+      const deleting = req.method === 'DELETE';
       return res.status(409).json({
-        message: borrando
+        message: deleting
           ? 'No se puede eliminar porque tiene registros asociados. Podés darlo de baja en su lugar.'
           : 'Alguna referencia indicada no existe',
         code: 'FOREIGN_KEY',

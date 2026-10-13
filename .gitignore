@@ -28,6 +28,10 @@ dist-ssr
 .env.example
 
 # Respaldos e informes de base de datos (tienen datos reales o detalles internos)
+backups/
+migration-rehearsal-*.txt
+db-audit-*.txt
+# (nombres anteriores, por si quedaron en la PC)
 respaldos/
 ensayo-migracion-*.txt
 auditoria-db-*.txt

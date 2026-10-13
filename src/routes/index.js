@@ -1,168 +1,162 @@
-// Rutas de la API v2. Cada recurso tiene su ruta canónica en español y, mientras
-// queden pantallas sin migrar, los alias heredados de la v1 (en inglés).
-// La autenticación se aplica globalmente (authenticateAll en server.js); acá se
-// agregan los permisos por rol. Las reglas de propiedad (un vendedor solo ve lo
-// suyo) están en cada controlador.
+// Rutas de la API. La autenticación se aplica globalmente (authenticateAll en
+// server.js); acá se agregan los permisos por rol. Las reglas de propiedad (un
+// vendedor solo ve lo suyo) están en cada controlador.
 import { Router } from 'express';
 import { requireAdmin } from '../middlewares/auth.middleware.js';
-import { loginLimiterPorIp, loginLimiterPorUsuario } from '../middlewares/security.middleware.js';
-import * as usuarios from '../controllers/usuario.controller.js';
-import * as territorio from '../controllers/territorio.controller.js';
-import * as empresas from '../controllers/empresa.controller.js';
-import * as contactos from '../controllers/contacto.controller.js';
-import * as catalogo from '../controllers/catalogo.controller.js';
-import * as oportunidades from '../controllers/oportunidad.controller.js';
-import * as actividades from '../controllers/actividad.controller.js';
-import * as tareas from '../controllers/tarea.controller.js';
-import * as hojas from '../controllers/hojaRuta.controller.js';
-import * as objetivos from '../controllers/objetivo.controller.js';
-import * as promociones from '../controllers/promocion.controller.js';
-import * as notas from '../controllers/notaInterna.controller.js';
-import * as notificaciones from '../controllers/notificacion.controller.js';
-import * as empleados from '../controllers/empleado.controller.js';
-import * as ordenes from '../controllers/ordenServicio.controller.js';
+import { loginLimiterByIp, loginLimiterByUser } from '../middlewares/security.middleware.js';
+import * as users from '../controllers/user.controller.js';
+import * as territory from '../controllers/territory.controller.js';
+import * as companies from '../controllers/company.controller.js';
+import * as contacts from '../controllers/contact.controller.js';
+import * as catalog from '../controllers/catalog.controller.js';
+import * as opportunities from '../controllers/opportunity.controller.js';
+import * as activities from '../controllers/activity.controller.js';
+import * as tasks from '../controllers/task.controller.js';
+import * as roadmaps from '../controllers/roadmap.controller.js';
+import * as objectives from '../controllers/objective.controller.js';
+import * as promotions from '../controllers/promotion.controller.js';
+import * as notes from '../controllers/internalNote.controller.js';
+import * as notifications from '../controllers/notification.controller.js';
+import * as employees from '../controllers/employee.controller.js';
+import * as orders from '../controllers/serviceOrder.controller.js';
 import * as dashboard from '../controllers/dashboard.controller.js';
 
 const router = Router();
 const admin = requireAdmin;
 
-// Registra el mismo handler en varias rutas (canónica + alias v1).
-const on = (method, paths, ...handlers) => {
-  for (const p of [].concat(paths)) router[method](p, ...handlers);
-};
-
 // ── Autenticación y usuarios ──
-on('post', ['/auth/login', '/users/login'], loginLimiterPorIp, loginLimiterPorUsuario, usuarios.login);
-on('get', '/auth/me', usuarios.me);
-on('post', '/auth/cambiar-password', usuarios.cambiarPassword);
+router.post('/auth/login', loginLimiterByIp, loginLimiterByUser, users.login);
+router.get('/auth/me', users.me);
+router.post('/auth/change-password', users.changePassword);
 
-on('get', ['/usuarios', '/users'], usuarios.listar);
-on('post', ['/usuarios', '/users'], admin, usuarios.crear);
-on('get', ['/usuarios/:idUser', '/users/:idUser'], usuarios.obtener);
-on('put', ['/usuarios/:idUser', '/users/:idUser'], usuarios.actualizar); // propio o admin (controlador)
-on('delete', ['/usuarios/:idUser', '/users/:idUser'], admin, usuarios.eliminar);
-on('get', ['/usuarios/:idUser/imagen', '/users/:idUser/profile-image'], usuarios.obtenerImagen);
-on('put', ['/usuarios/:idUser/imagen', '/users/:idUser/profile-image'], usuarios.actualizarImagen);
-on('get', '/usuarios/:idUser/zona', usuarios.obtenerZona);
-on('put', '/usuarios/:idUser/zona', admin, usuarios.actualizarZona);
+router.get('/users', users.list);
+router.post('/users', admin, users.create);
+router.get('/users/:idUser', users.get);
+router.put('/users/:idUser', users.update); // propio o admin (controlador)
+router.delete('/users/:idUser', admin, users.remove);
+router.get('/users/:idUser/image', users.getImage);
+router.put('/users/:idUser/image', users.updateImage);
+router.get('/users/:idUser/zone', users.getZone);
+router.put('/users/:idUser/zone', admin, users.updateZone);
 
 // ── Territorio ──
-on('get', '/provincias', territorio.listarProvincias);
-on('get', '/localidades', territorio.listarLocalidades);
-on('get', '/localidades/:id', territorio.obtenerLocalidad);
-on('post', '/localidades', admin, territorio.crearLocalidad);
-on('put', '/localidades/:id', admin, territorio.actualizarLocalidad);
-on('delete', '/localidades/:id', admin, territorio.eliminarLocalidad);
+router.get('/provinces', territory.listProvinces);
+router.get('/localities', territory.listLocalities);
+router.get('/localities/:id', territory.getLocality);
+router.post('/localities', admin, territory.createLocality);
+router.put('/localities/:id', admin, territory.updateLocality);
+router.delete('/localities/:id', admin, territory.removeLocality);
 
 // ── Empresas y contactos ──
-on('get', ['/empresas', '/clientCompany'], empresas.listar);
-on('post', ['/empresas', '/clientCompany'], empresas.crear);
-on('get', ['/empresas/:id/arbol', '/clientCompany/:id/tree'], empresas.arbol);
-on('get', '/empresas/:id/tablero', empresas.tablero);
-on('post', '/empresas/:id/restaurar', admin, empresas.restaurar);
-on('get', ['/empresas/:id', '/clientCompany/:id'], empresas.obtener);
-on('put', ['/empresas/:id', '/clientCompany/:id'], empresas.actualizar);
-on('delete', ['/empresas/:id', '/clientCompany/:id'], admin, empresas.eliminar);
-on('get', '/cultivos', empresas.listarCultivos);
-on('post', '/cultivos', admin, empresas.crearCultivo);
+router.get('/companies', companies.list);
+router.post('/companies', companies.create);
+router.get('/companies/:id/tree', companies.tree);
+router.get('/companies/:id/dashboard', companies.dashboard);
+router.post('/companies/:id/restore', admin, companies.restore);
+router.get('/companies/:id', companies.get);
+router.put('/companies/:id', companies.update);
+router.delete('/companies/:id', admin, companies.remove);
+router.get('/crops', companies.listCrops);
+router.post('/crops', admin, companies.createCrop);
 
-on('get', ['/contactos', '/clientes'], contactos.listar);
-on('post', ['/contactos', '/clientes'], contactos.crear);
-on('post', '/contactos/:id/restaurar', admin, contactos.restaurar);
-on('get', ['/contactos/:id', '/clientes/:id'], contactos.obtener);
-on('put', ['/contactos/:id', '/clientes/:id'], contactos.actualizar);
-on('delete', ['/contactos/:id', '/clientes/:id'], admin, contactos.eliminar);
+router.get('/contacts', contacts.list);
+router.post('/contacts', contacts.create);
+router.post('/contacts/:id/restore', admin, contacts.restore);
+router.get('/contacts/:id', contacts.get);
+router.put('/contacts/:id', contacts.update);
+router.delete('/contacts/:id', admin, contacts.remove);
 
 // ── Catálogo ──
-on('get', ['/lineas-producto', '/lineaProds'], catalogo.listarLineas);
-on('get', ['/lineas-producto/:id', '/lineaProds/:id'], catalogo.obtenerLinea);
-on('post', ['/lineas-producto', '/lineaProds'], admin, catalogo.crearLinea);
-on('put', ['/lineas-producto/:id', '/lineaProds/:id'], admin, catalogo.actualizarLinea);
-on('delete', ['/lineas-producto/:id', '/lineaProds/:id'], admin, catalogo.eliminarLinea);
-on('get', '/catalogo', catalogo.listarItems);
-on('get', '/productos', catalogo.listarItems); // la pantalla de productos muestra ambos tipos
-on('get', '/servicios', catalogo.listarServicios);
-on('get', ['/catalogo/:id', '/productos/:id', '/servicios/:id'], catalogo.obtenerItem);
-on('post', ['/catalogo', '/productos'], admin, catalogo.crearItem);
-on('post', '/servicios', admin, catalogo.crearServicio);
-on('put', ['/catalogo/:id', '/productos/:id', '/servicios/:id'], admin, catalogo.actualizarItem);
-on('delete', ['/catalogo/:id', '/productos/:id', '/servicios/:id'], admin, catalogo.eliminarItem);
+router.get('/product-lines', catalog.listProductLines);
+router.get('/product-lines/:id', catalog.getProductLine);
+router.post('/product-lines', admin, catalog.createProductLine);
+router.put('/product-lines/:id', admin, catalog.updateProductLine);
+router.delete('/product-lines/:id', admin, catalog.removeProductLine);
+router.get('/catalog', catalog.listItems);
+router.get('/products', catalog.listItems); // la pantalla de productos muestra ambos tipos
+router.get('/services', catalog.listServices);
+for (const base of ['/catalog', '/products', '/services']) {
+  router.get(`${base}/:id`, catalog.getItem);
+  router.put(`${base}/:id`, admin, catalog.updateItem);
+  router.delete(`${base}/:id`, admin, catalog.removeItem);
+}
+router.post('/catalog', admin, catalog.createItem);
+router.post('/products', admin, catalog.createItem);
+router.post('/services', admin, catalog.createService);
 
 // ── Gestión comercial ──
-on('get', ['/oportunidades', '/opportunities'], oportunidades.listar);
-on('post', ['/oportunidades', '/opportunities'], oportunidades.crear);
-on('post', '/oportunidades/:id/restaurar', admin, oportunidades.restaurar);
-on('get', ['/oportunidades/:id', '/opportunities/:id'], oportunidades.obtener);
-on('put', ['/oportunidades/:id', '/opportunities/:id'], oportunidades.actualizar);
-on('delete', ['/oportunidades/:id', '/opportunities/:id'], oportunidades.eliminar);
+router.get('/opportunities', opportunities.list);
+router.post('/opportunities', opportunities.create);
+router.post('/opportunities/:id/restore', admin, opportunities.restore);
+router.get('/opportunities/:id', opportunities.get);
+router.put('/opportunities/:id', opportunities.update);
+router.delete('/opportunities/:id', opportunities.remove);
 
-on('get', ['/actividades', '/formulario-actividad', '/formularios-actividad', '/activities'], actividades.listar);
-on('post', ['/actividades', '/formulario-actividad', '/formularios-actividad', '/activities'], actividades.crear);
-on('get', ['/actividades/:id', '/formulario-actividad/:id', '/formularios-actividad/:id'], actividades.obtener);
-on('put', ['/actividades/:id', '/formulario-actividad/:id', '/formularios-actividad/:id'], actividades.actualizar);
-on('delete', ['/actividades/:id', '/formulario-actividad/:id', '/formularios-actividad/:id'], actividades.eliminar);
-on('get', '/adjuntos/:id', actividades.obtenerAdjunto);
+router.get('/activities', activities.list);
+router.post('/activities', activities.create);
+router.get('/activities/:id', activities.get);
+router.put('/activities/:id', activities.update);
+router.delete('/activities/:id', activities.remove);
+router.get('/attachments/:id', activities.getAttachment);
 
-on('get', ['/tareas', '/tasks'], tareas.listar);
-on('post', ['/tareas', '/tasks'], tareas.crear);
-on('get', ['/tareas/:id', '/tasks/:id'], tareas.obtener);
-on('put', ['/tareas/:id', '/tasks/:id'], tareas.actualizar);
-on('patch', ['/tareas/:id/finalizar', '/tasks/:id/finalizar'], tareas.finalizar);
-on('patch', ['/tareas/:id/estado', '/tasks/:id/status'], tareas.cambiarEstado);
-on('delete', ['/tareas/:id', '/tasks/:id'], tareas.eliminar);
+router.get('/tasks', tasks.list);
+router.post('/tasks', tasks.create);
+router.get('/tasks/:id', tasks.get);
+router.put('/tasks/:id', tasks.update);
+router.patch('/tasks/:id/complete', tasks.complete);
+router.patch('/tasks/:id/status', tasks.changeStatus);
+router.delete('/tasks/:id', tasks.remove);
 
 // ── Planificación ──
-on('get', ['/hojas-ruta', '/roadmaps'], hojas.listar);
-on('get', ['/roadmaps/user/:idUser', '/roadmaps/seller/:sellerId'], hojas.listar);
-on('post', ['/hojas-ruta', '/roadmaps'], hojas.crear);
-on('patch', ['/paradas/:id', '/roadmaps/stops/:stopId/status'], hojas.actualizarParada);
-on('get', ['/hojas-ruta/:id', '/roadmaps/:id'], hojas.obtener);
-on('put', '/hojas-ruta/:id', hojas.actualizar);
-on('put', ['/hojas-ruta/:id/iniciar', '/roadmaps/:id/start'], hojas.iniciar);
-on('put', ['/hojas-ruta/:id/finalizar', '/roadmaps/:id/end'], hojas.finalizar);
-on('post', ['/hojas-ruta/:id/paradas', '/roadmaps/:id/stops'], hojas.agregarParada);
-on('delete', ['/hojas-ruta/:id', '/roadmaps/:id'], hojas.eliminar);
+router.get('/roadmaps', roadmaps.list);
+router.post('/roadmaps', roadmaps.create);
+router.patch('/stops/:id', roadmaps.updateStop);
+router.get('/roadmaps/:id', roadmaps.get);
+router.put('/roadmaps/:id', roadmaps.update);
+router.put('/roadmaps/:id/start', roadmaps.start);
+router.put('/roadmaps/:id/complete', roadmaps.complete);
+router.post('/roadmaps/:id/stops', roadmaps.addStop);
+router.delete('/roadmaps/:id', roadmaps.remove);
 
-on('get', ['/objetivos', '/objectives'], objetivos.listar);
-on('get', '/objectives/seller/:sellerId', objetivos.listar);
-on('get', '/objetivos/:id', objetivos.obtener);
-on('post', ['/objetivos', '/objectives'], admin, objetivos.crear);
-on('put', ['/objetivos/:id', '/objectives/:id'], admin, objetivos.actualizar);
-on('patch', ['/objetivos/:id', '/objectives/:id'], admin, objetivos.actualizar);
-on('delete', ['/objetivos/:id', '/objectives/:id'], admin, objetivos.eliminar);
+router.get('/objectives', objectives.list);
+router.get('/objectives/:id', objectives.get);
+router.post('/objectives', admin, objectives.create);
+router.put('/objectives/:id', admin, objectives.update);
+router.patch('/objectives/:id', admin, objectives.update);
+router.delete('/objectives/:id', admin, objectives.remove);
 
-on('get', ['/promociones', '/promotions'], promociones.listar);
-on('get', '/promociones/:id', promociones.obtener);
-on('post', ['/promociones', '/promotions'], admin, promociones.crear);
-on('put', ['/promociones/:id', '/promotions/:id'], admin, promociones.actualizar);
-on('delete', ['/promociones/:id', '/promotions/:id'], admin, promociones.eliminar);
+router.get('/promotions', promotions.list);
+router.get('/promotions/:id', promotions.get);
+router.post('/promotions', admin, promotions.create);
+router.put('/promotions/:id', admin, promotions.update);
+router.delete('/promotions/:id', admin, promotions.remove);
 
-on('get', ['/notas-internas', '/internal-notes'], admin, notas.listar);
-on('post', ['/notas-internas', '/internal-notes'], admin, notas.crear);
-on('put', '/notas-internas/:id', admin, notas.actualizar);
-on('delete', '/notas-internas/:id', admin, notas.eliminar);
+router.get('/internal-notes', admin, notes.list);
+router.post('/internal-notes', admin, notes.create);
+router.put('/internal-notes/:id', admin, notes.update);
+router.delete('/internal-notes/:id', admin, notes.remove);
 
-on('get', '/notificaciones', notificaciones.listar);
-on('patch', '/notificaciones/leidas', notificaciones.marcarTodasLeidas);
-on('patch', '/notificaciones/:id/leida', notificaciones.marcarLeida);
-on('delete', '/notificaciones/leidas', notificaciones.limpiarLeidas);
+router.get('/notifications', notifications.list);
+router.patch('/notifications/read', notifications.markAllRead);
+router.patch('/notifications/:id/read', notifications.markRead);
+router.delete('/notifications/read', notifications.clearRead);
 
 // ── Servicios de control de plagas (administración) ──
-on('get', '/empleados', admin, empleados.listar);
-on('get', '/empleados/:id', admin, empleados.obtener);
-on('post', '/empleados', admin, empleados.crear);
-on('put', '/empleados/:id', admin, empleados.actualizar);
-on('delete', '/empleados/:id', admin, empleados.eliminar);
+router.get('/employees', admin, employees.list);
+router.get('/employees/:id', admin, employees.get);
+router.post('/employees', admin, employees.create);
+router.put('/employees/:id', admin, employees.update);
+router.delete('/employees/:id', admin, employees.remove);
 
-on('get', '/ordenes-servicio', admin, ordenes.listar);
-on('get', '/ordenes-servicio/:id', admin, ordenes.obtener);
-on('post', '/ordenes-servicio', admin, ordenes.crear);
-on('put', '/ordenes-servicio/:id', admin, ordenes.actualizar);
-on('post', '/ordenes-servicio/:id/evaluacion', admin, ordenes.guardarEvaluacion);
-on('post', '/ordenes-servicio/:id/restaurar', admin, ordenes.restaurar);
-on('delete', '/ordenes-servicio/:id', admin, ordenes.eliminar);
+router.get('/service-orders', admin, orders.list);
+router.get('/service-orders/:id', admin, orders.get);
+router.post('/service-orders', admin, orders.create);
+router.put('/service-orders/:id', admin, orders.update);
+router.post('/service-orders/:id/evaluation', admin, orders.saveEvaluation);
+router.post('/service-orders/:id/restore', admin, orders.restore);
+router.delete('/service-orders/:id', admin, orders.remove);
 
 // ── Tablero general ──
-on('get', ['/dashboard', '/tablero'], admin, dashboard.general);
+router.get('/dashboard', admin, dashboard.general);
 
 export default router;

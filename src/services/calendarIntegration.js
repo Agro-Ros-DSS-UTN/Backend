@@ -57,9 +57,9 @@ const getCalendarClient = () => {
 // Arma fecha/hora ISO a partir de fechaVencimiento (DATEONLY) + horaVencimiento ('HH:MM'),
 // con 1h de duración por defecto. Si no hay hora, usa un bloque de 09:00 a 10:00.
 const buildEventTimes = (task) => {
-  const fecha = task.fechaVencimiento;
-  const hora = task.horaVencimiento || '09:00';
-  const start = new Date(`${fecha}T${hora}:00-03:00`); // hora de Argentina
+  const date = task.dueDate;
+  const time = task.dueTime || '09:00';
+  const start = new Date(`${date}T${time}:00-03:00`); // hora de Argentina
   const end = new Date(start.getTime() + 60 * 60 * 1000);
   return { startISO: start.toISOString(), endISO: end.toISOString() };
 };
@@ -71,7 +71,7 @@ export const createCalendarEventForAssignee = async (task, user) => {
     warnNotConfigured();
     return { success: false, reason: 'not_configured' };
   }
-  if (!task?.fechaVencimiento) {
+  if (!task?.dueDate) {
     return { success: false, reason: 'task_without_due_date' };
   }
   try {
@@ -83,8 +83,8 @@ export const createCalendarEventForAssignee = async (task, user) => {
       calendarId: process.env.GOOGLE_CALENDAR_ID,
       sendUpdates: attendees.length > 0 ? 'all' : 'none',
       requestBody: {
-        summary: task.titulo || 'Tarea CRM Agroquímica Rosario',
-        description: [task.descripcion, task.notas].filter(Boolean).join('\n\n') || undefined,
+        summary: task.title || 'Tarea CRM Agroquímica Rosario',
+        description: [task.description, task.notes].filter(Boolean).join('\n\n') || undefined,
         start: { dateTime: startISO, timeZone: 'America/Argentina/Buenos_Aires' },
         end: { dateTime: endISO, timeZone: 'America/Argentina/Buenos_Aires' },
         attendees,
