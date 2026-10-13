@@ -60,7 +60,7 @@ const start = async () => {
       await runMigrations(sequelize, { log: (m) => console.log(`[db] ${m}`) });
     } else {
       console.error(`[db] Hay ${pending.length} migraciones pendientes (${pending.map((m) => m.name).join(', ')}).`);
-      console.error('[db] Ejecutá "npm run db:migrate" (con un respaldo previo) o definí DB_AUTO_MIGRATE=true.');
+      console.error('[db] Ejecutá "npm run db:migrate" desde la PC (con un respaldo previo).');
       process.exit(1);
     }
   }

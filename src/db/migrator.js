@@ -28,8 +28,14 @@ const LEGACY_FILES = {
   '0011_dni_de_relleno.js': '0011_placeholder_national_ids.js',
 };
 
+// Las migraciones no se suben al repositorio (se corren desde la PC con
+// npm run db:migrate), así que en el servidor la carpeta no existe. Para no
+// arrancar contra una base vieja, el servidor exige que esté aplicada la última
+// migración que conoce el código. Al agregar una migración, actualizar este nombre.
+export const LATEST_MIGRATION = '0012_english_names.js';
+
 export const listMigrationFiles = () =>
-  fs.readdirSync(dir).filter((f) => /^\d{4}_.+\.js$/.test(f)).sort();
+  fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /^\d{4}_.+\.js$/.test(f)).sort() : [];
 
 const upgradeLegacyTable = async (h) => {
   if (!(await h.hasTable(LEGACY_TABLE)) || (await h.hasTable('migrations'))) return;
@@ -56,7 +62,10 @@ export const migrationStatus = async (sequelize) => {
   const h = createSchemaHelpers(sequelize);
   await ensureTable(h);
   const done = new Set((await h.rows('SELECT name FROM migrations')).map((r) => r.name));
-  return listMigrationFiles().map((f) => ({ name: f, applied: done.has(f) }));
+  const files = listMigrationFiles();
+  if (!files.length) return [{ name: LATEST_MIGRATION, applied: done.has(LATEST_MIGRATION) }];
+  if (files.at(-1) !== LATEST_MIGRATION) console.warn(`[migraciones] LATEST_MIGRATION (${LATEST_MIGRATION}) no es la última migración (${files.at(-1)}): actualizalo en src/db/migrator.js.`);
+  return files.map((f) => ({ name: f, applied: done.has(f) }));
 };
 
 export const pendingMigrations = async (sequelize) => (await migrationStatus(sequelize)).filter((m) => !m.applied);
@@ -78,6 +87,7 @@ const withLock = async (h, fn) => {
 };
 
 export const runMigrations = async (sequelize, { log = console.log, to } = {}) => {
+  if (!fs.existsSync(dir)) throw new Error('Las migraciones no están en este equipo: correlas desde la PC con "npm run db:migrate".');
   const h = createSchemaHelpers(sequelize);
   await ensureTable(h);
   return withLock(h, async () => {

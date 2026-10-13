@@ -35,3 +35,9 @@ db-audit-*.txt
 respaldos/
 ensayo-migracion-*.txt
 auditoria-db-*.txt
+
+# Solo en la PC: documentación, scripts de mantenimiento y migraciones de la base
+# (se corren a mano con npm run …; el servidor no los necesita)
+docs/
+scripts/
+src/db/migrations/

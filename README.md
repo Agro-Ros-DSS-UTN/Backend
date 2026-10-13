@@ -131,8 +131,10 @@ Clases, archivos, variables, rutas de la API, campos JSON, tablas y columnas est
 usuario, los comentarios y los valores guardados (estados, tipos, roles) siguen en español. La equivalencia con
 los nombres anteriores y con el diagrama está en [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 
-Documentación: [`docs/MIGRATION_V2.md`](docs/MIGRATION_V2.md) (plan de migración y despliegue),
-[`docs/SECURITY.md`](docs/SECURITY.md) (correcciones), [`docs/DECISIONS.md`](docs/DECISIONS.md) (puntos decididos el 11/10),
-[`docs/STRUCTURE.md`](docs/STRUCTURE.md) (qué hay en cada carpeta), [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md)
-(tabla → API → pantalla), [`docs/GLOSSARY.md`](docs/GLOSSARY.md) (español → inglés) y el diagrama
-[`docs/DiagramaMD-DSS-v2.1.drawio`](docs/DiagramaMD-DSS-v2.1.drawio).
+### Qué no se sube a GitHub
+
+`docs/`, `scripts/` y `src/db/migrations/` quedan **solo en la PC** (están en `.gitignore`): son la documentación,
+los comandos de mantenimiento (`npm run db:*`, `seed:*`, `test:security`) y las migraciones de la base, que se
+corren a mano desde la PC. El servidor no los necesita: al arrancar solo verifica que la base tenga aplicada la
+última migración que conoce el código (`LATEST_MIGRATION` en `src/db/migrator.js`, que se actualiza al agregar una).
+Quien clone el repositorio necesita una copia de esas carpetas para migrar o mantener la base.
