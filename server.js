@@ -30,6 +30,12 @@ app.use(cors({
 app.use(express.json({ limit: env.bodyLimit }));
 app.use(apiLimiter);
 
+// La raíz responde sin sesión, para que abrir la dirección de la API en el
+// navegador muestre que está andando en vez de un error de token.
+app.get('/', (req, res) => {
+  res.json({ name: 'API CRM AgroRos', status: 'ok', health: '/api/health' });
+});
+
 app.get('/api/health', async (req, res) => {
   try {
     await sequelize.authenticate();
