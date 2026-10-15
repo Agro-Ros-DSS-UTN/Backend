@@ -108,13 +108,13 @@ const resolveReferences = async (b, d, transaction) => {
     technicianIds = [];
     for (const n of names) {
       const employee = await Employee.findOne({ where: { fullName: n, role: { [Op.in]: ORDER_EXECUTOR_ROLES } }, transaction });
-      if (!employee) throw badRequest(`"${n}" no está registrado como técnico. Cargalo en Empleados con rol Técnico.`, { technicianName: 'notTechnician' });
+      if (!employee) throw badRequest(`"${n}" no puede figurar en la orden. En Empleados, su puesto tiene que ser Técnico Aplicador, Jefe de Operaciones o Supervisor.`, { technicianName: 'notTechnician' });
       technicianIds.push(employee.id);
     }
   }
   if (technicianIds?.length) {
     const valid = await Employee.findAll({ where: { id: { [Op.in]: technicianIds }, role: { [Op.in]: ORDER_EXECUTOR_ROLES }, active: true }, attributes: ['id'], transaction });
-    if (valid.length !== technicianIds.length) throw badRequest('Solo se pueden asignar empleados activos con rol Técnico o Supervisor', { technicianIds: 'notTechnician' });
+    if (valid.length !== technicianIds.length) throw badRequest('Solo se pueden asignar empleados activos con puesto Técnico Aplicador, Jefe de Operaciones o Supervisor', { technicianIds: 'notTechnician' });
   }
   return technicianIds;
 };

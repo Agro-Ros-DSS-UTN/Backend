@@ -4,8 +4,11 @@ import { EMPLOYEE_ROLES } from '../models/services.model.js';
 import { asyncHandler, badRequest, idParam, notFound } from '../utils/http.js';
 import { dataUrl, parseDate, required, text, oneOf } from '../utils/validation.js';
 
+// El rol interno se deduce del puesto (la pantalla de Empleados ya no lo pide aparte).
+// Pueden figurar y firmar en una orden: técnicos aplicadores, jefes de operaciones y supervisores.
 const ROLE_FROM_JOB_TITLE = (jobTitle = '') => {
   const p = String(jobTitle).toLowerCase();
+  if (p.includes('jefe de operac')) return 'supervisor';
   if (p.includes('técnic') || p.includes('tecnic') || p.includes('aplicador') || p.includes('fumig')) return 'tecnico';
   if (p.includes('supervis')) return 'supervisor';
   if (p.includes('chofer') || p.includes('conductor')) return 'chofer';
@@ -19,7 +22,8 @@ const data = (b) => {
   set('fullName', text(b.fullName, 'fullName', 150));
   set('nationalId', text(b.nationalId, 'nationalId', 30));
   set('licenseNumber', text(b.licenseNumber, 'licenseNumber', 50));
-  set('role', b.role !== undefined ? oneOf(b.role, EMPLOYEE_ROLES, 'role') : undefined);
+  if (b.role !== undefined) set('role', oneOf(b.role, EMPLOYEE_ROLES, 'role'));
+  else if (b.jobTitle !== undefined) set('role', ROLE_FROM_JOB_TITLE(b.jobTitle));
   set('jobTitle', text(b.jobTitle, 'jobTitle', 100));
   set('phone', text(b.phone, 'phone', 50));
   set('email', text(b.email, 'email', 150));
