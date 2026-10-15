@@ -21,6 +21,7 @@
     "companies:lar": "node scripts/lar-structure.mjs",
     "companies:cleanup": "node scripts/cleanup-companies.mjs",
     "companies:cuit": "node scripts/fill-cuits.mjs",
+    "companies:geocode": "node scripts/geocode-companies.mjs",
     "test:security": "node scripts/security-tests.mjs"
   },
   "dependencies": {
