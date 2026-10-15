@@ -32,7 +32,7 @@ const LEGACY_FILES = {
 // npm run db:migrate), así que en el servidor la carpeta no existe. Para no
 // arrancar contra una base vieja, el servidor exige que esté aplicada la última
 // migración que conoce el código. Al agregar una migración, actualizar este nombre.
-export const LATEST_MIGRATION = '0012_english_names.js';
+export const LATEST_MIGRATION = '0013_english_names.js';
 
 export const listMigrationFiles = () =>
   fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /^\d{4}_.+\.js$/.test(f)).sort() : [];
