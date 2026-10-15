@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createSchemaHelpers } from './schema.js';
 
 // Motor de migraciones propio (sin dependencias extra).
-// - Cada archivo de src/db/migrations exporta { description, up(ctx) } y,
+// - Cada archivo de src/shared/db/migrations exporta { description, up(ctx) } y,
 //   cuando se puede, down(ctx).
 // - Las migraciones aplicadas se registran en la tabla `migrations`.
 // - Un lock de MySQL (GET_LOCK) evita que dos instancias migren a la vez.

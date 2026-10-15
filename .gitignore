@@ -40,4 +40,5 @@ auditoria-db-*.txt
 # (se corren a mano con npm run …; el servidor no los necesita)
 docs/
 scripts/
+src/shared/db/migrations/
 src/db/migrations/
