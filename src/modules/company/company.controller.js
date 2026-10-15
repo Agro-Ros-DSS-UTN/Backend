@@ -37,7 +37,10 @@ export const serializeCompany = (e) => {
     localityId: j.localityId ?? null,
     // "localidad" queda como texto (las pantallas lo muestran tal cual); el detalle aparte.
     locality: loc?.name ?? null,
-    localityDetails: loc ? { id: loc.id, name: loc.name, postalCode: loc.postalCode, provinceId: loc.provinceId, province: loc.province?.name ?? null } : null,
+    localityDetails: loc ? {
+      id: loc.id, name: loc.name, postalCode: loc.postalCode, provinceId: loc.provinceId, province: loc.province?.name ?? null,
+      latitude: loc.latitude != null ? Number(loc.latitude) : null, longitude: loc.longitude != null ? Number(loc.longitude) : null,
+    } : null,
     province: loc?.province?.name ?? null,
     latitude: j.latitude !== null && j.latitude !== undefined ? Number(j.latitude) : null,
     longitude: j.longitude !== null && j.longitude !== undefined ? Number(j.longitude) : null,
@@ -245,6 +248,17 @@ export const update = asyncHandler(async (req, res) => {
       postalCode: req.body.postalCode ?? req.body.localityPostalCode,
     }, { transaction });
     if (localityId !== undefined) d.localityId = localityId;
+    // Si cambia la dirección o la localidad y no llega un punto nuevo, el anterior ya no corresponde:
+    // se borra para que el mapa no muestre la empresa en un lugar que no es el suyo.
+    const moved = (d.address !== undefined && (d.address || null) !== (company.address || null))
+      || (d.localityId !== undefined && d.localityId !== company.localityId);
+    if (moved && req.body.latitude === undefined && req.body.longitude === undefined) {
+      d.latitude = null;
+      d.longitude = null;
+    }
+    if ((d.latitude == null) !== (d.longitude == null) && (d.latitude !== undefined || d.longitude !== undefined)) {
+      throw badRequest('La ubicación necesita latitud y longitud juntas');
+    }
     if (isAdmin(req) && req.body.createdById !== undefined) d.createdById = (await chosenCreator(req, req.body.createdById, transaction)) || null;
     await company.update(d, { transaction });
     if (Array.isArray(req.body.cropIds)) await company.setCrops(req.body.cropIds.map(Number).filter(Boolean), { transaction });

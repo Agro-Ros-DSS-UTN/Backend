@@ -24,9 +24,14 @@ const num = (v) => (v !== null && v !== undefined ? Number(v) : null);
 
 export const serializeStop = (p) => {
   const j = typeof p.toJSON === 'function' ? p.toJSON() : p;
-  // Sin coordenadas propias: se usan las de la empresa o, si no, las del centro de su localidad.
-  const lat = num(j.latitude) ?? num(j.company?.latitude) ?? num(j.company?.locality?.latitude);
-  const lon = num(j.longitude) ?? num(j.company?.longitude) ?? num(j.company?.locality?.longitude);
+  // Sin coordenadas propias: se usan las de la empresa o, si no, las del centro de su localidad
+  // (estas últimas se marcan como aproximadas para que el mapa no las muestre como el lugar real).
+  const pair = (o) => (num(o?.latitude) !== null && num(o?.longitude) !== null ? [num(o.latitude), num(o.longitude)] : null);
+  const own = pair(j);
+  const fromCompany = own ? null : pair(j.company);
+  const fromLocality = own || fromCompany ? null : pair(j.company?.locality);
+  const [lat, lon] = own ?? fromCompany ?? fromLocality ?? [null, null];
+  const locationSource = own ? 'parada' : fromCompany ? 'empresa' : fromLocality ? 'localidad' : null;
   return {
     id: j.id,
     roadmapId: j.roadmapId,
@@ -38,7 +43,8 @@ export const serializeStop = (p) => {
     locality: j.company?.locality?.name ?? null,
     latitude: lat,
     longitude: lon,
-    approximateCoordinates: num(j.latitude) === null && lat !== null,
+    approximateCoordinates: locationSource === 'localidad',
+    locationSource,
     status: j.status,
     estimatedTime: j.estimatedTime ?? null,
     notes: j.notes ?? null,
