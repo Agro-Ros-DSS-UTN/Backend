@@ -1,14 +1,14 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import cron from 'node-cron';
-import { env, assertServerEnv } from './src/config/env.js';
-import { sequelize } from './src/models/index.js';
-import routes from './src/routes/index.js';
-import { authenticateAll } from './src/middlewares/auth.middleware.js';
-import { securityHeaders, apiLimiter } from './src/middlewares/security.middleware.js';
-import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.middleware.js';
-import { pendingMigrations, runMigrations } from './src/db/migrator.js';
-import { runTaskReminderSweep } from './src/jobs/taskReminders.job.js';
+import { env, assertServerEnv } from './src/shared/config/env.js';
+import { sequelize } from './src/shared/models/index.js';
+import routes from './src/shared/routes/index.js';
+import { authenticateAll } from './src/shared/middlewares/auth.middleware.js';
+import { securityHeaders, apiLimiter } from './src/shared/middlewares/security.middleware.js';
+import { errorHandler, notFoundHandler } from './src/shared/middlewares/errorHandler.middleware.js';
+import { pendingMigrations, runMigrations } from './src/shared/db/migrator.js';
+import { runTaskReminderSweep } from './src/modules/planning/taskReminders.job.js';
 
 assertServerEnv();
 
