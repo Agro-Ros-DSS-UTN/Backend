@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { User } from '../models/index.js';
+import * as userRepository from '../../modules/users/user.repository.js';
 import { AppError, forbidden } from '../utils/http.js';
 
 // Rol canónico: la base guarda "administrador" | "vendedor"; en código se usa
@@ -28,7 +28,7 @@ export const invalidateUserCache = (idUser) => cache.delete(String(idUser));
 const loadUser = async (idUser) => {
   const hit = cache.get(idUser);
   if (hit && hit.expires > Date.now()) return hit.user;
-  const u = await User.scope('auth').findByPk(idUser, { attributes: ['idUser', 'fullName', 'role', 'accountStatus', 'tokenVersion'] });
+  const u = await userRepository.findAuthMinimalById(idUser);
   const user = u ? { idUser: u.idUser, fullName: u.fullName, role: normalizeRole(u.role), active: u.accountStatus === 'Activo', tokenVersion: u.tokenVersion } : null;
   cache.set(idUser, { user, expires: Date.now() + TTL_MS });
   return user;

@@ -3,16 +3,21 @@
 // las asociaciones con `constraints: false` para que Sequelize nunca intente
 // crear o alterar FKs por su cuenta.
 import sequelize from '../config/database.js';
-import User from '../../modules/users/user.model.js';
-import { Province, Locality, UserLocality } from '../../modules/territory/territory.model.js';
-import { Company, Crop, CompanyCrop, Contact, ContactPhone } from '../../modules/company/company.model.js';
-import { ProductLine, CatalogItem } from '../../modules/catalog/catalog.model.js';
-import { Opportunity, OpportunityItem, Activity, Attachment, Task, TaskAssignee } from '../../modules/commercial/commercial.model.js';
-import {
-  Roadmap, RoadmapStop, Objective, ObjectiveCompany, ObjectiveItem, ObjectivePromotion,
-  Promotion, PromotionItem, InternalNote, Notification,
-} from '../../modules/planning/planning.model.js';
-import { Employee, ServiceOrder, ServiceOrderEmployee, AppliedProduct, ServiceEvaluation } from '../../modules/services/services.model.js';
+import User from '../../modules/users/user.entity.js';
+import { Province, Locality, UserLocality } from '../../modules/territory/territory.entity.js';
+import { Company, Crop, CompanyCrop } from '../../modules/company/company.entity.js';
+import { Contact, ContactPhone } from '../../modules/company/contact.entity.js';
+import { Employee } from '../../modules/company/employee.entity.js';
+import { ProductLine, CatalogItem } from '../../modules/catalog/catalog.entity.js';
+import { Opportunity, OpportunityItem } from '../../modules/commercial/opportunity.entity.js';
+import { Promotion, PromotionItem } from '../../modules/commercial/promotion.entity.js';
+import { Activity, Attachment } from '../../modules/planning/activity.entity.js';
+import { Task, TaskAssignee } from '../../modules/planning/task.entity.js';
+import { Roadmap, RoadmapStop } from '../../modules/planning/roadmap.entity.js';
+import { Objective, ObjectiveCompany, ObjectiveItem, ObjectivePromotion } from '../../modules/planning/objective.entity.js';
+import { InternalNote } from '../../modules/internal-notes/internalNote.entity.js';
+import { Notification } from '../../modules/notifications/notification.entity.js';
+import { ServiceOrder, ServiceOrderEmployee, AppliedProduct, ServiceEvaluation } from '../../modules/services/serviceOrder.entity.js';
 
 const nc = { constraints: false };
 

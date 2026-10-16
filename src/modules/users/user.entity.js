@@ -6,7 +6,7 @@ export const ACCOUNT_STATUSES = ['Activo', 'Inactivo'];
 
 // Usuario del sistema. El vendedor es un Usuario con rol "vendedor"; su zona
 // de trabajo es el conjunto de Localidades asignadas (usuario_localidades).
-const User = sequelize.define('User', {
+export const User = sequelize.define('User', {
   idUser: { type: DataTypes.STRING(20), primaryKey: true, field: 'id_user' },
   fullName: { type: DataTypes.STRING(150), allowNull: false },
   email: { type: DataTypes.STRING(150), allowNull: true, validate: { isEmail: true } },
