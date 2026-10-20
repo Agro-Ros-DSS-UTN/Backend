@@ -76,8 +76,14 @@ export const findEvaluationByOrderId = (serviceOrderId, transaction) =>
 export const createEvaluation = (payload, transaction) =>
   ServiceEvaluation.create(payload, { transaction });
 
-export const updateEvaluation = (evaluation, payload, transaction) =>
-  evaluation.update(payload, { transaction });
+// Se actualiza por orden (no por la instancia): el número de evaluación es parte de la
+// clave primaria y puede cambiar.
+export const updateEvaluationByOrderId = (serviceOrderId, payload, transaction) =>
+  ServiceEvaluation.update(payload, { where: { serviceOrderId }, transaction });
+
+// Evaluación de otra orden que ya use ese número.
+export const findEvaluationByNumber = (evaluationNumber, exceptOrderId, transaction) =>
+  ServiceEvaluation.findOne({ where: { evaluationNumber, serviceOrderId: { [Op.ne]: exceptOrderId } }, transaction });
 
 export const findCompanyById = (id, transaction) =>
   Company.findByPk(id, { transaction });

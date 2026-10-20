@@ -202,8 +202,12 @@ export const saveServiceOrderEvaluation = async (id, body = {}) => {
   const photos = Array.isArray(body.photos)
     ? body.photos.slice(0, 10).map((f, i) => image(typeof f === 'object' ? f?.url ?? f?.data : f, `photos[${i}]`))
     : undefined;
+  // Número propio de la evaluación (el de la planilla): obligatorio y único.
+  const evaluationNumber = text(body.evaluationNumber, 'evaluationNumber', 30);
+  if (!evaluationNumber) throw badRequest('Ingresá el número de evaluación', { evaluationNumber: 'required' });
   const payload = {
     serviceOrderId: o.id,
+    evaluationNumber,
     evaluationDate: parseDate(body.evaluationDate, 'evaluationDate') || new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10),
     grainCondition: text(body.grainCondition, 'grainCondition', 5) || 'A',
     samplingPoint: text(body.samplingPoint, 'samplingPoint', 150) || 'Superficie',
@@ -219,8 +223,11 @@ export const saveServiceOrderEvaluation = async (id, body = {}) => {
     customerComment: text(body.customerComment, 'customerComment', 2000) ?? null,
   };
   await serviceOrderRepository.runTransaction(async (transaction) => {
+    if (await serviceOrderRepository.findEvaluationByNumber(evaluationNumber, o.id, transaction)) {
+      throw conflict(`Ya existe otra evaluación con el número ${evaluationNumber}`, { fields: { evaluationNumber: 'duplicate' } });
+    }
     const ev = await serviceOrderRepository.findEvaluationByOrderId(o.id, transaction);
-    if (ev) await serviceOrderRepository.updateEvaluation(ev, payload, transaction);
+    if (ev) await serviceOrderRepository.updateEvaluationByOrderId(o.id, payload, transaction);
     else await serviceOrderRepository.createEvaluation(payload, transaction);
     if (o.status === 'Programada' || o.status === 'En Ejecución') {
       await serviceOrderRepository.update(o, { status: 'Completada', completedDate: o.completedDate || payload.evaluationDate }, { transaction });

@@ -114,10 +114,11 @@ export const findServiceOrdersForDashboard = ({ companyIds, fromStr, serviceWher
   ServiceOrder.findAll({
     where: {
       ...(companyIds ? { companyId: { [Op.in]: companyIds } } : {}),
-      scheduledDate: { [Op.gte]: fromStr },
+      // Entra si se programó o se realizó dentro del período (se agrupa por fecha de realización).
+      [Op.or]: [{ scheduledDate: { [Op.gte]: fromStr } }, { completedDate: { [Op.gte]: fromStr } }],
     },
     include: [
-      { model: ServiceEvaluation, as: 'evaluation', attributes: ['result', 'customerSatisfaction', 'evaluationDate'] },
+      { model: ServiceEvaluation, as: 'evaluation', attributes: ['evaluationNumber', 'result', 'customerSatisfaction', 'evaluationDate'] },
       { model: CatalogItem, as: 'service', attributes: ['id', 'name', 'serviceType'], ...(serviceWhere ? { where: serviceWhere, required: true } : { required: false }) },
     ],
     attributes: ['id', 'orderNumber', 'scheduledDate', 'completedDate', 'status', 'workType', 'companyId'],

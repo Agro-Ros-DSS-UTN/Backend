@@ -295,7 +295,15 @@ export const getCompanyDashboard = async (id, query = {}) => {
       const d = new Date(from);
       d.setUTCMonth(from.getUTCMonth() + i);
       const key = d.toISOString().slice(0, 7);
-      byMonth.push({ month: key, completed: completed.filter((o) => String(o.completedDate || o.scheduledDate).startsWith(key)).length });
+      const ofMonth = completed.filter((o) => String(o.completedDate || o.scheduledDate).startsWith(key));
+      byMonth.push({
+        month: key,
+        completed: ofMonth.length,
+        // Servicios exitosos (evaluación "Sin insectos vivos") y realizados en la fecha programada:
+        // los usa el gráfico "Servicios cumplidos por empresa" del tablero general.
+        effective: ofMonth.filter((o) => efficacyOf(o.evaluation?.result) === 'effective').length,
+        onTime: ofMonth.filter((o) => o.completedDate && o.completedDate <= o.scheduledDate).length,
+      });
     }
     const results = { effective: 0, partial: 0, ineffective: 0, notEvaluated: 0 };
     for (const o of completed) {
@@ -348,6 +356,20 @@ export const getCompanyDashboard = async (id, query = {}) => {
           orderNumber: o.orderNumber, date: o.completedDate || o.scheduledDate, service: o.service?.name || o.workType,
           result: o.evaluation?.result || null, satisfaction: o.evaluation?.customerSatisfaction || null,
         }))
+      : [],
+    // Todas las órdenes exitosas del período (solo de la propia empresa): respaldo para negociar.
+    successfulOrders: scope === 'company'
+      ? orders
+        .filter((o) => o.status === 'Completada' && efficacyOf(o.evaluation?.result) === 'effective')
+        .map((o) => ({
+          orderNumber: o.orderNumber,
+          evaluationNumber: o.evaluation?.evaluationNumber || null,
+          date: o.completedDate || o.scheduledDate,
+          service: o.service?.name || o.workType,
+          onTime: Boolean(o.completedDate && o.completedDate <= o.scheduledDate),
+          satisfaction: o.evaluation?.customerSatisfaction || null,
+        }))
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
       : [],
   };
 };
