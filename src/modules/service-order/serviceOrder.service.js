@@ -4,12 +4,23 @@ import * as serviceOrderRepository from './serviceOrder.repository.js';
 import { badRequest, conflict, notFound, toInt } from '../../shared/utils/http.js';
 import { dataUrl, number, parseDate, text, oneOf } from '../../shared/utils/validation.js';
 
+// Eficacia de un servicio según el resultado de la evaluación (para el tablero por
+// empresa y la respuesta de cada orden): sin insectos vivos = efectivo,
+// seguimiento = parcial, cualquier otro resultado = ineficaz.
+export const efficacyOf = (result) => {
+  if (result === 'Sin insectos vivos') return 'effective';
+  if (result === 'Seguimiento') return 'partial';
+  if (result) return 'ineffective';
+  return null;
+};
+
 export const serializeServiceOrder = (o) => {
   if (!o) return null;
   const j = typeof o.toJSON === 'function' ? o.toJSON() : o;
   const technicians = (j.technicians || []).map((t) => ({ id: t.id, fullName: t.fullName, licenseNumber: t.licenseNumber }));
+  // `efficacy` va primero, como cuando era un campo calculado del modelo.
   const ev = j.evaluation
-    ? { ...j.evaluation, efficacy: j.evaluation.efficacy, ppmPH3: j.evaluation.ppmPH3 !== null && j.evaluation.ppmPH3 !== undefined ? Number(j.evaluation.ppmPH3) : null }
+    ? { efficacy: efficacyOf(j.evaluation.result), ...j.evaluation, ppmPH3: j.evaluation.ppmPH3 !== null && j.evaluation.ppmPH3 !== undefined ? Number(j.evaluation.ppmPH3) : null }
     : null;
   return {
     ...j,

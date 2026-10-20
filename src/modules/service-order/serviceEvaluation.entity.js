@@ -3,16 +3,9 @@ import sequelize from '../../shared/config/database.js';
 
 export const EVALUATION_RESULTS = ['Sin insectos vivos', 'Con insectos vivos', 'Seguimiento', 'Refumigación'];
 
-// Eficacia derivada del resultado de la planilla (para el tablero por empresa).
-export const efficacyOf = (result) => {
-  if (result === 'Sin insectos vivos') return 'effective';
-  if (result === 'Seguimiento') return 'partial';
-  if (result) return 'ineffective';
-  return null;
-};
-
 // Evaluación posterior de una orden de servicio (1:1). Tabla de detalle: la maneja
-// el repository de órdenes de servicio.
+// el repository de órdenes de servicio. La eficacia (efectiva, parcial o ineficaz)
+// es una regla de negocio: la calcula serviceOrder.service (efficacyOf).
 export const ServiceEvaluation = sequelize.define('ServiceEvaluation', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   serviceOrderId: { type: DataTypes.INTEGER, allowNull: false },
@@ -29,5 +22,4 @@ export const ServiceEvaluation = sequelize.define('ServiceEvaluation', {
   technicianSignature: { type: DataTypes.TEXT('long'), allowNull: true },
   customerSatisfaction: { type: DataTypes.INTEGER, allowNull: true, validate: { min: 1, max: 5 } },
   customerComment: { type: DataTypes.TEXT, allowNull: true },
-  efficacy: { type: DataTypes.VIRTUAL, get() { return efficacyOf(this.getDataValue('result')); } },
 }, { tableName: 'service_evaluations' });
