@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import * as userRepository from '../../modules/users/user.repository.js';
+import * as userRepository from '../../modules/user/user.repository.js';
 import { AppError, forbidden } from '../utils/http.js';
 
 // Rol canónico: la base guarda "administrador" | "vendedor"; en código se usa

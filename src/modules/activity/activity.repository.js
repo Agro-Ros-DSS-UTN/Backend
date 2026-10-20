@@ -2,7 +2,7 @@ import { Op } from 'sequelize';
 import {
   sequelize, Activity, Attachment, Opportunity, Company, Contact, User, Task, TaskAssignee, ServiceOrder, RoadmapStop, Roadmap,
 } from '../../shared/models/index.js';
-import { OPEN_STATUSES } from '../commercial/opportunity.entity.js';
+import { OPEN_STATUSES } from '../opportunity/opportunity.entity.js';
 
 export const includeActivity = [
   {

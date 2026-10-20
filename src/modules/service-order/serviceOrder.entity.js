@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../../shared/config/database.js';
-import { EMPLOYEE_ROLES, ORDER_EXECUTOR_ROLES, Employee } from '../company/employee.entity.js';
+import { EMPLOYEE_ROLES, ORDER_EXECUTOR_ROLES, Employee } from '../employee/employee.entity.js';
 
 export { EMPLOYEE_ROLES, ORDER_EXECUTOR_ROLES, Employee };
 export const SERVICE_ORDER_STATUSES = ['Programada', 'En Ejecución', 'Completada', 'Cancelada'];

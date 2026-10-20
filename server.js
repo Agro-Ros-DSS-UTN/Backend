@@ -8,7 +8,7 @@ import { authenticateAll } from './src/shared/middlewares/auth.middleware.js';
 import { securityHeaders, apiLimiter } from './src/shared/middlewares/security.middleware.js';
 import { errorHandler, notFoundHandler } from './src/shared/middlewares/errorHandler.middleware.js';
 import { pendingMigrations, runMigrations } from './src/shared/db/migrator.js';
-import { runTaskReminderSweep } from './src/modules/planning/taskReminders.job.js';
+import { runTaskReminderSweep } from './src/modules/task/taskReminders.job.js';
 
 assertServerEnv();
 

@@ -2,7 +2,7 @@ import { TASK_TYPES, LEVELS, TASK_STATUSES } from './task.entity.js';
 import * as taskRepository from './task.repository.js';
 import { badRequest, forbidden, notFound, toInt } from '../../shared/utils/http.js';
 import { parseDate, required, text, oneOf } from '../../shared/utils/validation.js';
-import { createNotification } from '../notifications/notification.service.js';
+import { createNotification } from '../notification/notification.service.js';
 
 // Estados como los mandaba la v1 (en minúscula): se aceptan y se guardan con el nombre canónico.
 const V1_STATUS = { pendiente: 'Pendiente', 'en progreso': 'Pendiente', finalizada: 'Finalizada', completada: 'Finalizada', cancelada: 'Cancelada' };

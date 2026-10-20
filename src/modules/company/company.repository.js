@@ -3,7 +3,7 @@ import {
   sequelize, Company, Locality, Province, Contact, ContactPhone, User, Crop,
   ServiceOrder, ServiceEvaluation, CatalogItem, UserLocality,
 } from '../../shared/models/index.js';
-import { OPEN_STATUSES } from '../commercial/opportunity.entity.js';
+import { OPEN_STATUSES } from '../opportunity/opportunity.entity.js';
 
 export const includeBase = [
   { model: Locality, as: 'locality', include: [{ model: Province, as: 'province' }] },

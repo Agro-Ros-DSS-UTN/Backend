@@ -1,11 +1,11 @@
 import { ACTIVITY_CONTACT_TYPES } from './activity.entity.js';
-import { TASK_TYPES, LEVELS } from './task.entity.js';
-import { OPPORTUNITY_STATUSES } from '../commercial/opportunity.entity.js';
+import { TASK_TYPES, LEVELS } from '../task/task.entity.js';
+import { OPPORTUNITY_STATUSES } from '../opportunity/opportunity.entity.js';
 import * as activityRepository from './activity.repository.js';
 import { badRequest, forbidden, notFound, toInt } from '../../shared/utils/http.js';
 import { dataUrl, number, parseDate, parseDateTime, text, oneOf } from '../../shared/utils/validation.js';
-import { createOpportunityInTransaction } from '../commercial/opportunity.service.js';
-import { createNotification } from '../notifications/notification.service.js';
+import { createOpportunityInTransaction } from '../opportunity/opportunity.service.js';
+import { createNotification } from '../notification/notification.service.js';
 
 const V1_TYPE = { Visita: 'visita', Llamada: 'llamada', WhatsApp: 'whatsapp', Whatsapp: 'whatsapp', Email: 'email', Correo: 'email', 'Reunión': 'reunion', Reunion: 'reunion' };
 const normalizeType = (t) => (t ? V1_TYPE[t] || String(t).toLowerCase() : 'visita');

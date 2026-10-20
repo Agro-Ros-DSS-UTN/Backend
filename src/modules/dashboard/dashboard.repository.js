@@ -2,7 +2,7 @@ import { Op, fn, col, literal, QueryTypes } from 'sequelize';
 import {
   sequelize, Company, Opportunity, Activity, User, ProductLine, Objective, ServiceOrder, ServiceEvaluation, Task, Locality, Province,
 } from '../../shared/models/index.js';
-import { includeOpportunity } from '../commercial/opportunity.repository.js';
+import { includeOpportunity } from '../opportunity/opportunity.repository.js';
 
 export const fetchDashboardData = async (twelveMonthsAgo) => {
   const [

@@ -1,9 +1,9 @@
-import { OPPORTUNITY_STATUSES } from '../commercial/opportunity.entity.js';
+import { OPPORTUNITY_STATUSES } from '../opportunity/opportunity.entity.js';
 import * as dashboardRepository from './dashboard.repository.js';
-import { serializeOpportunity } from '../commercial/opportunity.service.js';
-import { serializeActivity } from '../planning/activity.service.js';
+import { serializeOpportunity } from '../opportunity/opportunity.service.js';
+import { serializeActivity } from '../activity/activity.service.js';
 import { serializeCompany } from '../company/company.service.js';
-import { serializeObjective } from '../planning/objective.service.js';
+import { serializeObjective } from '../objective/objective.service.js';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 

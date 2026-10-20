@@ -3,21 +3,21 @@
 // las asociaciones con `constraints: false` para que Sequelize nunca intente
 // crear o alterar FKs por su cuenta.
 import sequelize from '../config/database.js';
-import User from '../../modules/users/user.entity.js';
+import User from '../../modules/user/user.entity.js';
 import { Province, Locality, UserLocality } from '../../modules/territory/territory.entity.js';
 import { Company, Crop, CompanyCrop } from '../../modules/company/company.entity.js';
-import { Contact, ContactPhone } from '../../modules/company/contact.entity.js';
-import { Employee } from '../../modules/company/employee.entity.js';
+import { Contact, ContactPhone } from '../../modules/contact/contact.entity.js';
+import { Employee } from '../../modules/employee/employee.entity.js';
 import { ProductLine, CatalogItem } from '../../modules/catalog/catalog.entity.js';
-import { Opportunity, OpportunityItem } from '../../modules/commercial/opportunity.entity.js';
-import { Promotion, PromotionItem } from '../../modules/commercial/promotion.entity.js';
-import { Activity, Attachment } from '../../modules/planning/activity.entity.js';
-import { Task, TaskAssignee } from '../../modules/planning/task.entity.js';
-import { Roadmap, RoadmapStop } from '../../modules/planning/roadmap.entity.js';
-import { Objective, ObjectiveCompany, ObjectiveItem, ObjectivePromotion } from '../../modules/planning/objective.entity.js';
-import { InternalNote } from '../../modules/internal-notes/internalNote.entity.js';
-import { Notification } from '../../modules/notifications/notification.entity.js';
-import { ServiceOrder, ServiceOrderEmployee, AppliedProduct, ServiceEvaluation } from '../../modules/services/serviceOrder.entity.js';
+import { Opportunity, OpportunityItem } from '../../modules/opportunity/opportunity.entity.js';
+import { Promotion, PromotionItem } from '../../modules/promotion/promotion.entity.js';
+import { Activity, Attachment } from '../../modules/activity/activity.entity.js';
+import { Task, TaskAssignee } from '../../modules/task/task.entity.js';
+import { Roadmap, RoadmapStop } from '../../modules/roadmap/roadmap.entity.js';
+import { Objective, ObjectiveCompany, ObjectiveItem, ObjectivePromotion } from '../../modules/objective/objective.entity.js';
+import { InternalNote } from '../../modules/internal-note/internalNote.entity.js';
+import { Notification } from '../../modules/notification/notification.entity.js';
+import { ServiceOrder, ServiceOrderEmployee, AppliedProduct, ServiceEvaluation } from '../../modules/service-order/serviceOrder.entity.js';
 
 const nc = { constraints: false };
 

@@ -2,7 +2,7 @@ import { OBJECTIVE_TYPES, PERIOD_TYPES } from './objective.entity.js';
 import * as objectiveRepository from './objective.repository.js';
 import { badRequest, conflict, forbidden, notFound, toInt } from '../../shared/utils/http.js';
 import { number, parseDate, text, oneOf } from '../../shared/utils/validation.js';
-import { createNotification } from '../notifications/notification.service.js';
+import { createNotification } from '../notification/notification.service.js';
 
 export const normalizeObjectiveType = (t) => {
   if (OBJECTIVE_TYPES.includes(t)) return t;
