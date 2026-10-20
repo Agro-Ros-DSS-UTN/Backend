@@ -116,7 +116,7 @@ export const rollbackLast = async (sequelize, { log = console.log } = {}) => {
     if (!last) return log('[migraciones] No hay migraciones para revertir.');
     const mod = await import(pathToFileURL(path.join(dir, last.name)).href);
     if (typeof mod.down !== 'function') {
-      throw new Error(`${last.name} no se puede revertir automáticamente: restaurá desde las tablas _bak_v1_* o desde el respaldo (ver docs/MIGRATION_V2.md).`);
+      throw new Error(`${last.name} no se puede revertir automáticamente: restaurá desde el respaldo .sql (npm run db:restore, ver docs/MIGRATION_V2.md).`);
     }
     log(`[migraciones] ← revirtiendo ${last.name}`);
     await mod.down({ sequelize, h, log });

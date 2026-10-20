@@ -137,8 +137,8 @@ los nombres anteriores y con el diagrama está en [`docs/GLOSSARY.md`](docs/GLOS
 
 ### Qué no se sube a GitHub
 
-`docs/`, `scripts/` y `src/db/migrations/` quedan **solo en la PC** (están en `.gitignore`): son la documentación,
+`docs/`, `scripts/` y `src/shared/db/migrations/` quedan **solo en la PC** (están en `.gitignore`): son la documentación,
 los comandos de mantenimiento (`npm run db:*`, `seed:*`, `test:security`) y las migraciones de la base, que se
 corren a mano desde la PC. El servidor no los necesita: al arrancar solo verifica que la base tenga aplicada la
-última migración que conoce el código (`LATEST_MIGRATION` en `src/db/migrator.js`, que se actualiza al agregar una).
+última migración que conoce el código (`LATEST_MIGRATION` en `src/shared/db/migrator.js`, que se actualiza al agregar una).
 Quien clone el repositorio necesita una copia de esas carpetas para migrar o mantener la base.
