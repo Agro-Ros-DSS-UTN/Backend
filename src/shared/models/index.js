@@ -2,22 +2,40 @@
 // Las reglas ON DELETE de la base las define la migración 0009; acá se declaran
 // las asociaciones con `constraints: false` para que Sequelize nunca intente
 // crear o alterar FKs por su cuenta.
+// Cada tabla tiene su propio archivo entity (src/modules/<entidad>/<tabla>.entity.js).
 import sequelize from '../config/database.js';
 import User from '../../modules/user/user.entity.js';
-import { Province, Locality, UserLocality } from '../../modules/territory/territory.entity.js';
-import { Company, Crop, CompanyCrop } from '../../modules/company/company.entity.js';
-import { Contact, ContactPhone } from '../../modules/contact/contact.entity.js';
+import { UserLocality } from '../../modules/user/userLocality.entity.js';
+import { Province } from '../../modules/province/province.entity.js';
+import { Locality } from '../../modules/locality/locality.entity.js';
+import { Company } from '../../modules/company/company.entity.js';
+import { CompanyCrop } from '../../modules/company/companyCrop.entity.js';
+import { Crop } from '../../modules/crop/crop.entity.js';
+import { Contact } from '../../modules/contact/contact.entity.js';
+import { ContactPhone } from '../../modules/contact/contactPhone.entity.js';
 import { Employee } from '../../modules/employee/employee.entity.js';
-import { ProductLine, CatalogItem } from '../../modules/catalog/catalog.entity.js';
-import { Opportunity, OpportunityItem } from '../../modules/opportunity/opportunity.entity.js';
-import { Promotion, PromotionItem } from '../../modules/promotion/promotion.entity.js';
-import { Activity, Attachment } from '../../modules/activity/activity.entity.js';
-import { Task, TaskAssignee } from '../../modules/task/task.entity.js';
-import { Roadmap, RoadmapStop } from '../../modules/roadmap/roadmap.entity.js';
-import { Objective, ObjectiveCompany, ObjectiveItem, ObjectivePromotion } from '../../modules/objective/objective.entity.js';
+import { ProductLine } from '../../modules/product-line/productLine.entity.js';
+import { CatalogItem } from '../../modules/catalog-item/catalogItem.entity.js';
+import { Opportunity } from '../../modules/opportunity/opportunity.entity.js';
+import { OpportunityItem } from '../../modules/opportunity/opportunityItem.entity.js';
+import { Promotion } from '../../modules/promotion/promotion.entity.js';
+import { PromotionItem } from '../../modules/promotion/promotionItem.entity.js';
+import { Activity } from '../../modules/activity/activity.entity.js';
+import { Attachment } from '../../modules/activity/attachment.entity.js';
+import { Task } from '../../modules/task/task.entity.js';
+import { TaskAssignee } from '../../modules/task/taskAssignee.entity.js';
+import { Roadmap } from '../../modules/roadmap/roadmap.entity.js';
+import { RoadmapStop } from '../../modules/roadmap/roadmapStop.entity.js';
+import { Objective } from '../../modules/objective/objective.entity.js';
+import { ObjectiveCompany } from '../../modules/objective/objectiveCompany.entity.js';
+import { ObjectiveItem } from '../../modules/objective/objectiveItem.entity.js';
+import { ObjectivePromotion } from '../../modules/objective/objectivePromotion.entity.js';
 import { InternalNote } from '../../modules/internal-note/internalNote.entity.js';
 import { Notification } from '../../modules/notification/notification.entity.js';
-import { ServiceOrder, ServiceOrderEmployee, AppliedProduct, ServiceEvaluation } from '../../modules/service-order/serviceOrder.entity.js';
+import { ServiceOrder } from '../../modules/service-order/serviceOrder.entity.js';
+import { ServiceOrderEmployee } from '../../modules/service-order/serviceOrderEmployee.entity.js';
+import { AppliedProduct } from '../../modules/service-order/appliedProduct.entity.js';
+import { ServiceEvaluation } from '../../modules/service-order/serviceEvaluation.entity.js';
 
 const nc = { constraints: false };
 

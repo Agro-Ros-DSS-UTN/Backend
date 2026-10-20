@@ -23,14 +23,3 @@ export const Company = sequelize.define('Company', {
   createdById: { type: DataTypes.STRING(20), allowNull: true },
   createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
 }, { tableName: 'companies', timestamps: true, createdAt: false, updatedAt: false, paranoid: true, deletedAt: 'deletedAt' });
-
-export const Crop = sequelize.define('Crop', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING(100), allowNull: false },
-  demandMonths: { type: DataTypes.STRING(40), allowNull: true },
-}, { tableName: 'crops' });
-
-export const CompanyCrop = sequelize.define('CompanyCrop', {
-  companyId: { type: DataTypes.INTEGER, primaryKey: true },
-  cropId: { type: DataTypes.INTEGER, primaryKey: true },
-}, { tableName: 'company_crops' });

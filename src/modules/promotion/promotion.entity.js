@@ -13,7 +13,3 @@ export const Promotion = sequelize.define('Promotion', {
   createdById: { type: DataTypes.STRING(20), allowNull: true },
 }, { tableName: 'promotions' });
 
-export const PromotionItem = sequelize.define('PromotionItem', {
-  promotionId: { type: DataTypes.INTEGER, primaryKey: true },
-  itemId: { type: DataTypes.INTEGER, primaryKey: true },
-}, { tableName: 'promotion_items' });

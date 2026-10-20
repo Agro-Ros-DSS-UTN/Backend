@@ -1,4 +1,5 @@
-import { SERVICE_ORDER_STATUSES, EVALUATION_RESULTS } from './serviceOrder.entity.js';
+import { SERVICE_ORDER_STATUSES } from './serviceOrder.entity.js';
+import { EVALUATION_RESULTS } from './serviceEvaluation.entity.js';
 import * as serviceOrderRepository from './serviceOrder.repository.js';
 import { badRequest, conflict, notFound, toInt } from '../../shared/utils/http.js';
 import { dataUrl, number, parseDate, text, oneOf } from '../../shared/utils/validation.js';

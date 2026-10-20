@@ -1,4 +1,5 @@
-import { STOP_STATUSES, ROADMAP_STATUSES } from './roadmap.entity.js';
+import { ROADMAP_STATUSES } from './roadmap.entity.js';
+import { STOP_STATUSES } from './roadmapStop.entity.js';
 import * as roadmapRepository from './roadmap.repository.js';
 import { badRequest, forbidden, notFound, toInt } from '../../shared/utils/http.js';
 import { number, parseDate, text, oneOf, urlHttp } from '../../shared/utils/validation.js';

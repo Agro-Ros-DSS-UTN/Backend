@@ -25,11 +25,3 @@ export const Task = sequelize.define('Task', {
   completedAt: { type: DataTypes.DATE, allowNull: true },
 }, { tableName: 'tasks' });
 
-export const TaskAssignee = sequelize.define('TaskAssignee', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  taskId: { type: DataTypes.INTEGER, allowNull: false },
-  userId: { type: DataTypes.STRING(20), allowNull: false },
-  calendarEventId: { type: DataTypes.STRING(255), allowNull: true },
-  reminder48hSent: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'reminder_48h_sent' },
-  reminder24hSent: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'reminder_24h_sent' },
-}, { tableName: 'task_assignees' });

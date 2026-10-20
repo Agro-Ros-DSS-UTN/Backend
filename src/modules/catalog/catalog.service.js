@@ -1,4 +1,5 @@
-import { LINE_CATEGORIES, SERVICE_TYPES } from './catalog.entity.js';
+import { LINE_CATEGORIES } from '../product-line/productLine.entity.js';
+import { SERVICE_TYPES } from '../catalog-item/catalogItem.entity.js';
 import * as catalogRepository from './catalog.repository.js';
 import { badRequest, conflict, notFound, pick } from '../../shared/utils/http.js';
 import { dataUrl, number, required, text, oneOf, urlHttp } from '../../shared/utils/validation.js';

@@ -13,9 +13,3 @@ export const Contact = sequelize.define('Contact', {
   companyId: { type: DataTypes.INTEGER, allowNull: true },
   createdAt: { type: DataTypes.DATE, allowNull: true, defaultValue: DataTypes.NOW },
 }, { tableName: 'contacts', timestamps: true, createdAt: false, updatedAt: false, paranoid: true, deletedAt: 'deletedAt' });
-
-export const ContactPhone = sequelize.define('ContactPhone', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  contactId: { type: DataTypes.INTEGER, allowNull: false },
-  number: { type: DataTypes.STRING(30), allowNull: false },
-}, { tableName: 'contact_phones' });

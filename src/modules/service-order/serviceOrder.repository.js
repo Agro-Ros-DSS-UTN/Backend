@@ -2,7 +2,7 @@ import { Op } from 'sequelize';
 import {
   sequelize, ServiceOrder, AppliedProduct, ServiceEvaluation, Employee, Company, CatalogItem, Opportunity, User, Activity,
 } from '../../shared/models/index.js';
-import { ORDER_EXECUTOR_ROLES } from './serviceOrder.entity.js';
+import { ORDER_EXECUTOR_ROLES } from '../employee/employee.entity.js';
 
 export const includeServiceOrder = [
   { model: AppliedProduct, as: 'appliedProducts', include: [{ model: CatalogItem, as: 'item', attributes: ['id', 'name'] }] },

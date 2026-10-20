@@ -1,5 +1,5 @@
 import { COMPANY_LEVELS } from './company.entity.js';
-import { efficacyOf } from '../service-order/serviceOrder.entity.js';
+import { efficacyOf } from '../service-order/serviceEvaluation.entity.js';
 import * as companyRepository from './company.repository.js';
 import { badRequest, forbidden, notFound, pick, toInt } from '../../shared/utils/http.js';
 import { isValidCuit, formatCuit, number, required, text, oneOf } from '../../shared/utils/validation.js';

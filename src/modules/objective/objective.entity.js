@@ -17,17 +17,5 @@ export const Objective = sequelize.define('Objective', {
   createdAt: { type: DataTypes.DATE, allowNull: true, defaultValue: DataTypes.NOW },
 }, { tableName: 'objectives' });
 
-export const ObjectiveCompany = sequelize.define('ObjectiveCompany', {
-  objectiveId: { type: DataTypes.INTEGER, primaryKey: true },
-  companyId: { type: DataTypes.INTEGER, primaryKey: true },
-}, { tableName: 'objective_companies' });
 
-export const ObjectiveItem = sequelize.define('ObjectiveItem', {
-  objectiveId: { type: DataTypes.INTEGER, primaryKey: true },
-  itemId: { type: DataTypes.INTEGER, primaryKey: true },
-}, { tableName: 'objective_items' });
 
-export const ObjectivePromotion = sequelize.define('ObjectivePromotion', {
-  objectiveId: { type: DataTypes.INTEGER, primaryKey: true },
-  promotionId: { type: DataTypes.INTEGER, primaryKey: true },
-}, { tableName: 'objective_promotions' });
