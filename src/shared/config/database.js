@@ -28,8 +28,16 @@ const sequelize = new Sequelize(env.db.name, env.db.user, env.db.pass, {
   dialectOptions: {
     ...(ssl ? { ssl } : {}),
     dateStrings: false,
+    // Mantiene viva la conexión TCP aunque no haya consultas por un rato.
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
   },
-  pool: { max: 10, min: 0, idle: 10000, acquire: 30000 },
+  // Quedan 2 conexiones abiertas siempre y las demás se cierran tras 1 minuto sin
+  // uso. Antes se cerraban todas a los 10 s y el primer pedido al cambiar de
+  // pantalla tenía que abrir una conexión cifrada nueva (0,1–0,4 s más).
+  // Si el servidor de la base corta una conexión inactiva, Sequelize la descarta
+  // al validarla y abre otra.
+  pool: { max: 10, min: 2, idle: 60000, acquire: 30000, evict: 30000 },
   define: {
     timestamps: false,
     underscored: true,

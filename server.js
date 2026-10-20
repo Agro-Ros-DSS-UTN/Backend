@@ -1,5 +1,6 @@
 ﻿import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import cron from 'node-cron';
 import { env, assertServerEnv } from './src/shared/config/env.js';
 import { sequelize } from './src/shared/models/index.js';
@@ -26,6 +27,12 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   maxAge: 600,
+}));
+// Respuestas comprimidas (gzip): las listas pesan hasta 8 veces menos, clave en el
+// celular. Las de /auth no se comprimen porque llevan el token de sesión.
+app.use(compression({
+  threshold: 1024,
+  filter: (req, res) => !req.path.startsWith('/auth/') && compression.filter(req, res),
 }));
 app.use(express.json({ limit: env.bodyLimit }));
 app.use(apiLimiter);
