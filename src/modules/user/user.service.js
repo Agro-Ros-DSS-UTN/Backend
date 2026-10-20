@@ -239,3 +239,9 @@ export const updateUserZone = async (idUser, body) => {
   const fresh = await userRepository.findByIdWithZone(idUser);
   return serializeUser(fresh).zone;
 };
+
+// Zona del vendedor, para las reglas de otras entidades (por ejemplo, quién puede
+// editar una empresa).
+export const zoneLocalityIds = (idUser) => userRepository.findZoneLocalityIds(idUser);
+
+export const isLocalityInZone = (idUser, localityId) => userRepository.hasLocalityInZone(idUser, localityId);

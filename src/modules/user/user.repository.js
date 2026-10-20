@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { User, Locality, Province, sequelize } from '../../shared/models/index.js';
+import { User, UserLocality, Locality, Province, sequelize } from '../../shared/models/index.js';
 
 const zoneInclude = [
   { model: Locality, as: 'zone', through: { attributes: [] }, include: [{ model: Province, as: 'province' }] },
@@ -52,3 +52,12 @@ export const replaceUserZone = (user, localities) =>
 
 export const countByIds = (ids, transaction) =>
   User.count({ where: { idUser: { [Op.in]: ids } }, transaction });
+
+// Zona del vendedor (tabla intermedia user_localities).
+export const findZoneLocalityIds = async (userId) => {
+  const rows = await UserLocality.findAll({ where: { userId }, attributes: ['localityId'] });
+  return rows.map((z) => z.localityId);
+};
+
+export const hasLocalityInZone = async (userId, localityId) =>
+  Boolean(await UserLocality.findOne({ where: { userId, localityId } }));

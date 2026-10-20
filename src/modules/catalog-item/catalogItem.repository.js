@@ -1,28 +1,7 @@
 import { Op } from 'sequelize';
 import { ProductLine, CatalogItem, ServiceOrder, AppliedProduct } from '../../shared/models/index.js';
 
-export const findAllProductLines = () =>
-  ProductLine.findAll({ order: [['name', 'ASC']] });
-
-export const findProductLineById = (id, { withItems = false } = {}) =>
-  ProductLine.findByPk(id, withItems ? { include: [{ model: CatalogItem, as: 'items' }] } : {});
-
-export const findOrCreateProductLine = ({ name, category }) =>
-  ProductLine.findOrCreate({ where: { name }, defaults: { name, category } });
-
-export const createProductLine = (data) =>
-  ProductLine.create(data);
-
-export const updateProductLine = (line, data) =>
-  line.update(data);
-
-export const destroyProductLine = (line) =>
-  line.destroy();
-
-export const countItemsInProductLine = (productLineId) =>
-  CatalogItem.count({ where: { productLineId } });
-
-export const findAllItems = ({ type, active, productLineId, q, withoutImage = false }) => {
+export const findAll = ({ type, active, productLineId, q, withoutImage = false }) => {
   const where = {};
   if (type) where.type = type;
   if (active) where.active = true;
@@ -42,22 +21,22 @@ export const findAllItems = ({ type, active, productLineId, q, withoutImage = fa
   });
 };
 
-export const findItemById = (id, { withImage = false, withProductLine = false } = {}) =>
+export const findById = (id, { withImage = false, withProductLine = false } = {}) =>
   (withImage ? CatalogItem.scope('withImage') : CatalogItem).findByPk(
     id,
     withProductLine ? { include: [{ model: ProductLine, as: 'productLine' }] } : {}
   );
 
-export const createItem = (data) =>
+export const create = (data) =>
   CatalogItem.create(data);
 
-export const updateItem = (item, data) =>
+export const update = (item, data) =>
   item.update(data);
 
-export const destroyItem = (item) =>
+export const destroy = (item) =>
   item.destroy();
 
-export const countItemUsageInOrders = async (itemId) => {
+export const countUsageInOrders = async (itemId) => {
   const [inOrders, inApplied] = await Promise.all([
     ServiceOrder.count({ where: { serviceId: itemId }, paranoid: false }),
     AppliedProduct.count({ where: { itemId } }),

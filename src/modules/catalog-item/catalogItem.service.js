@@ -1,69 +1,12 @@
-import { LINE_CATEGORIES } from '../product-line/productLine.entity.js';
-import { SERVICE_TYPES } from '../catalog-item/catalogItem.entity.js';
-import * as catalogRepository from './catalog.repository.js';
-import { badRequest, conflict, notFound, pick } from '../../shared/utils/http.js';
+import { SERVICE_TYPES } from './catalogItem.entity.js';
+import * as catalogItemRepository from './catalogItem.repository.js';
+import { productLineExists, productLineIdByName } from '../product-line/productLine.service.js';
+import { badRequest, notFound, pick } from '../../shared/utils/http.js';
 import { dataUrl, number, required, text, oneOf, urlHttp } from '../../shared/utils/validation.js';
 
 const V1_SERVICE = 'Servicio Agronómico';
 
-// ── Líneas de producto ──
-const categoryOf = (name = '') => {
-  const n = name.toLowerCase();
-  if (n.includes('fumig') || n.includes('fosf')) return 'fumigante';
-  if (n.includes('roden') || n.includes('cebo')) return 'rodenticida';
-  if (n.includes('insect')) return 'insecticida';
-  if (n.includes('fertil') || n.includes('foliar')) return 'fertilizante';
-  return 'otro';
-};
-
-export const serializeProductLine = (l) => {
-  const j = typeof l.toJSON === 'function' ? l.toJSON() : l;
-  return { ...j, lineName: j.name, itemCount: j.itemCount !== undefined ? Number(j.itemCount) : undefined };
-};
-
-const lineData = (b) => {
-  const d = pick({ ...b, name: b.name ?? b.lineName ?? b.description }, ['name', 'code', 'category']);
-  if (d.name !== undefined) d.name = text(d.name, 'name', 100);
-  if (d.code !== undefined) d.code = text(d.code, 'code', 30);
-  if (d.category !== undefined) d.category = oneOf(d.category, LINE_CATEGORIES, 'category');
-  return d;
-};
-
-export const listProductLines = async () => {
-  const productLines = await catalogRepository.findAllProductLines();
-  return productLines.map(serializeProductLine);
-};
-
-export const getProductLine = async (id) => {
-  const l = await catalogRepository.findProductLineById(id, { withItems: true });
-  if (!l) throw notFound('Línea de producto');
-  return serializeProductLine(l);
-};
-
-export const createProductLine = async (body = {}) => {
-  const d = lineData(body);
-  required(d, ['name']);
-  const l = await catalogRepository.createProductLine({ ...d, category: d.category || categoryOf(d.name) });
-  return serializeProductLine(l);
-};
-
-export const updateProductLine = async (id, body = {}) => {
-  const l = await catalogRepository.findProductLineById(id);
-  if (!l) throw notFound('Línea de producto');
-  await catalogRepository.updateProductLine(l, lineData(body));
-  return serializeProductLine(l);
-};
-
-export const removeProductLine = async (id) => {
-  const l = await catalogRepository.findProductLineById(id);
-  if (!l) throw notFound('Línea de producto');
-  const used = await catalogRepository.countItemsInProductLine(l.id);
-  if (used) throw conflict(`No se puede eliminar: ${used} productos pertenecen a esta línea.`);
-  await catalogRepository.destroyProductLine(l);
-  return { message: 'Línea eliminada' };
-};
-
-// ── Ítems del catálogo (productos y servicios) ──
+// Ítems del catálogo (productos y servicios).
 export const serializeItem = (i) => {
   if (!i) return null;
   const j = typeof i.toJSON === 'function' ? i.toJSON() : i;
@@ -97,12 +40,6 @@ export const serializeItem = (i) => {
   };
 };
 
-const lineByName = async (name) => {
-  if (!name) return null;
-  const [l] = await catalogRepository.findOrCreateProductLine({ name, category: categoryOf(name) });
-  return l.id;
-};
-
 const itemData = async (b, forcedType) => {
   const d = pick({
     ...b,
@@ -117,7 +54,7 @@ const itemData = async (b, forcedType) => {
     if (/servicio/i.test(b.productType)) d.type = 'servicio';
     else {
       d.type = d.type || 'producto';
-      if (d.productLineId === undefined) d.productLineId = await lineByName(text(b.productType, 'productType', 100));
+      if (d.productLineId === undefined) d.productLineId = await productLineIdByName(text(b.productType, 'productType', 100));
     }
   }
   if (d.type !== undefined) d.type = oneOf(d.type, ['producto', 'servicio'], 'type');
@@ -135,7 +72,7 @@ const itemData = async (b, forcedType) => {
   }
   if (d.productLineId !== undefined && d.productLineId !== null) {
     d.productLineId = number(d.productLineId, 'productLineId', { integer: true });
-    if (!(await catalogRepository.findProductLineById(d.productLineId))) {
+    if (!(await productLineExists(d.productLineId))) {
       throw badRequest('La línea indicada no existe', { productLineId: 'missing' });
     }
   }
@@ -152,12 +89,12 @@ export const listCatalogItems = async (query = {}, forcedType = null) => {
   const productLineId = query.productLineId ? Number(query.productLineId) : undefined;
   const q = String(query.q || '').trim();
   const withoutImage = query.withoutImage === '1';
-  const items = await catalogRepository.findAllItems({ type, active, productLineId, q, withoutImage });
+  const items = await catalogItemRepository.findAll({ type, active, productLineId, q, withoutImage });
   return items.map(serializeItem);
 };
 
 export const getCatalogItem = async (id) => {
-  const i = await catalogRepository.findItemById(id, { withImage: true, withProductLine: true });
+  const i = await catalogItemRepository.findById(id, { withImage: true, withProductLine: true });
   if (!i) throw notFound('Ítem del catálogo');
   return serializeItem(i);
 };
@@ -166,8 +103,8 @@ export const createCatalogItem = async (body = {}, forcedType = null) => {
   const d = await itemData({ ...body, name: body.name ?? body.serviceType }, forcedType);
   if (!d.type) d.type = 'producto';
   required(d, ['name']);
-  const i = await catalogRepository.createItem(d);
-  const full = await catalogRepository.findItemById(i.id, { withImage: true, withProductLine: true });
+  const i = await catalogItemRepository.create(d);
+  const full = await catalogItemRepository.findById(i.id, { withImage: true, withProductLine: true });
   return {
     message: d.type === 'servicio' ? 'Servicio creado' : 'Producto creado',
     data: serializeItem(full),
@@ -175,29 +112,29 @@ export const createCatalogItem = async (body = {}, forcedType = null) => {
 };
 
 export const updateCatalogItem = async (id, body = {}) => {
-  const i = await catalogRepository.findItemById(id);
+  const i = await catalogItemRepository.findById(id);
   if (!i) throw notFound('Ítem del catálogo');
   const d = await itemData(body);
   if (d.name === null) throw badRequest('El nombre no puede quedar vacío');
-  await catalogRepository.updateItem(i, d);
-  const full = await catalogRepository.findItemById(i.id, { withImage: true, withProductLine: true });
+  await catalogItemRepository.update(i, d);
+  const full = await catalogItemRepository.findById(i.id, { withImage: true, withProductLine: true });
   return serializeItem(full);
 };
 
 // Si el ítem ya figura en órdenes u oportunidades se desactiva en vez de borrarse.
 export const removeCatalogItem = async (id) => {
-  const i = await catalogRepository.findItemById(id);
+  const i = await catalogItemRepository.findById(id);
   if (!i) throw notFound('Ítem del catálogo');
-  const used = await catalogRepository.countItemUsageInOrders(i.id);
+  const used = await catalogItemRepository.countUsageInOrders(i.id);
   if (used) {
-    await catalogRepository.updateItem(i, { active: false });
+    await catalogItemRepository.update(i, { active: false });
     return { message: 'El ítem figura en órdenes de servicio: se desactivó en lugar de eliminarse.', data: { id: i.id, active: false } };
   }
   try {
-    await catalogRepository.destroyItem(i);
+    await catalogItemRepository.destroy(i);
   } catch (e) {
     if (e.name === 'SequelizeForeignKeyConstraintError') {
-      await catalogRepository.updateItem(i, { active: false });
+      await catalogItemRepository.update(i, { active: false });
       return { message: 'El ítem está en uso: se desactivó en lugar de eliminarse.', data: { id: i.id, active: false } };
     }
     throw e;

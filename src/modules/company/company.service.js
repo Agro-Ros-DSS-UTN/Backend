@@ -3,8 +3,9 @@ import { efficacyOf } from '../service-order/serviceEvaluation.entity.js';
 import * as companyRepository from './company.repository.js';
 import { badRequest, forbidden, notFound, pick, toInt } from '../../shared/utils/http.js';
 import { isValidCuit, formatCuit, number, required, text, oneOf } from '../../shared/utils/validation.js';
-import { resolveLocality, serializeLocality } from '../territory/territory.service.js';
+import { resolveLocality, serializeLocality } from '../locality/locality.service.js';
 import { serializeContact } from '../contact/contact.service.js';
+import { isLocalityInZone, zoneLocalityIds } from '../user/user.service.js';
 
 export const serializeCompany = (e) => {
   if (!e) return null;
@@ -86,7 +87,7 @@ const companyData = (body, { cuitActual } = {}) => {
 const canEdit = async ({ admin, currentUserId }, company) => {
   if (admin || company.createdById === currentUserId) return true;
   if (!company.localityId) return false;
-  return companyRepository.hasUserLocality(currentUserId, company.localityId);
+  return isLocalityInZone(currentUserId, company.localityId);
 };
 
 // La administración puede indicar quién es el responsable del registro.
@@ -111,7 +112,7 @@ const branchIds = async (rootId) => {
 export const listCompanies = async (query = {}, { admin, currentUserId }) => {
   let localityIds;
   if (query.myZone === '1' || query.myZone === 'true') {
-    const zoneIds = await companyRepository.findUserLocalityIds(currentUserId);
+    const zoneIds = await zoneLocalityIds(currentUserId);
     if (zoneIds.length) localityIds = zoneIds;
   }
   const includeDeleted = admin && query.includeDeleted === '1';
@@ -349,12 +350,4 @@ export const getCompanyDashboard = async (id, query = {}) => {
         }))
       : [],
   };
-};
-
-export const listCrops = async () => companyRepository.findAllCrops();
-
-export const createCrop = async (body = {}) => {
-  const name = text(body?.name, 'name', 100);
-  required({ name }, ['name']);
-  return companyRepository.createCrop({ name, demandMonths: text(body?.demandMonths, 'demandMonths', 40) });
 };

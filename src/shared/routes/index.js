@@ -5,10 +5,13 @@ import { Router } from 'express';
 import { requireAdmin } from '../middlewares/auth.middleware.js';
 import { loginLimiterByIp, loginLimiterByUser } from '../middlewares/security.middleware.js';
 import * as users from '../../modules/user/user.controller.js';
-import * as territory from '../../modules/territory/territory.controller.js';
+import * as provinces from '../../modules/province/province.controller.js';
+import * as localities from '../../modules/locality/locality.controller.js';
 import * as companies from '../../modules/company/company.controller.js';
+import * as crops from '../../modules/crop/crop.controller.js';
 import * as contacts from '../../modules/contact/contact.controller.js';
-import * as catalog from '../../modules/catalog/catalog.controller.js';
+import * as productLines from '../../modules/product-line/productLine.controller.js';
+import * as catalogItems from '../../modules/catalog-item/catalogItem.controller.js';
 import * as opportunities from '../../modules/opportunity/opportunity.controller.js';
 import * as activities from '../../modules/activity/activity.controller.js';
 import * as tasks from '../../modules/task/task.controller.js';
@@ -40,12 +43,12 @@ router.get('/users/:idUser/zone', users.getZone);
 router.put('/users/:idUser/zone', admin, users.updateZone);
 
 // ── Territorio ──
-router.get('/provinces', territory.listProvinces);
-router.get('/localities', territory.listLocalities);
-router.get('/localities/:id', territory.getLocality);
-router.post('/localities', admin, territory.createLocality);
-router.put('/localities/:id', admin, territory.updateLocality);
-router.delete('/localities/:id', admin, territory.removeLocality);
+router.get('/provinces', provinces.list);
+router.get('/localities', localities.list);
+router.get('/localities/:id', localities.get);
+router.post('/localities', admin, localities.create);
+router.put('/localities/:id', admin, localities.update);
+router.delete('/localities/:id', admin, localities.remove);
 
 // ── Empresas y contactos ──
 router.get('/companies', companies.list);
@@ -56,8 +59,8 @@ router.post('/companies/:id/restore', admin, companies.restore);
 router.get('/companies/:id', companies.get);
 router.put('/companies/:id', companies.update);
 router.delete('/companies/:id', admin, companies.remove);
-router.get('/crops', companies.listCrops);
-router.post('/crops', admin, companies.createCrop);
+router.get('/crops', crops.list);
+router.post('/crops', admin, crops.create);
 
 router.get('/contacts', contacts.list);
 router.post('/contacts', contacts.create);
@@ -67,22 +70,22 @@ router.put('/contacts/:id', contacts.update);
 router.delete('/contacts/:id', admin, contacts.remove);
 
 // ── Catálogo ──
-router.get('/product-lines', catalog.listProductLines);
-router.get('/product-lines/:id', catalog.getProductLine);
-router.post('/product-lines', admin, catalog.createProductLine);
-router.put('/product-lines/:id', admin, catalog.updateProductLine);
-router.delete('/product-lines/:id', admin, catalog.removeProductLine);
-router.get('/catalog', catalog.listItems);
-router.get('/products', catalog.listItems); // la pantalla de productos muestra ambos tipos
-router.get('/services', catalog.listServices);
+router.get('/product-lines', productLines.list);
+router.get('/product-lines/:id', productLines.get);
+router.post('/product-lines', admin, productLines.create);
+router.put('/product-lines/:id', admin, productLines.update);
+router.delete('/product-lines/:id', admin, productLines.remove);
+router.get('/catalog', catalogItems.list);
+router.get('/products', catalogItems.list); // la pantalla de productos muestra ambos tipos
+router.get('/services', catalogItems.listServices);
 for (const base of ['/catalog', '/products', '/services']) {
-  router.get(`${base}/:id`, catalog.getItem);
-  router.put(`${base}/:id`, admin, catalog.updateItem);
-  router.delete(`${base}/:id`, admin, catalog.removeItem);
+  router.get(`${base}/:id`, catalogItems.get);
+  router.put(`${base}/:id`, admin, catalogItems.update);
+  router.delete(`${base}/:id`, admin, catalogItems.remove);
 }
-router.post('/catalog', admin, catalog.createItem);
-router.post('/products', admin, catalog.createItem);
-router.post('/services', admin, catalog.createService);
+router.post('/catalog', admin, catalogItems.create);
+router.post('/products', admin, catalogItems.create);
+router.post('/services', admin, catalogItems.createService);
 
 // ── Gestión comercial ──
 router.get('/opportunities', opportunities.list);

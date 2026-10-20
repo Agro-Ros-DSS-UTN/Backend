@@ -1,4 +1,5 @@
-import * as territoryRepository from './territory.repository.js';
+import * as localityRepository from './locality.repository.js';
+import { provinceExists } from '../province/province.service.js';
 import { badRequest, conflict, notFound, pick, toInt } from '../../shared/utils/http.js';
 import { number, required, text } from '../../shared/utils/validation.js';
 
@@ -29,19 +30,17 @@ const localityData = (b) => {
   return d;
 };
 
-export const listProvinces = async () => territoryRepository.findAllProvinces();
-
 // Búsqueda para el selector: ?q=texto&provinceId=82&limit=20
 export const listLocalities = async (query = {}) => {
   const q = String(query.q || '').trim();
   const provinceId = toInt(query.provinceId);
   const limit = Math.min(Number(query.limit) || (q ? 30 : 500), 2000);
-  const localities = await territoryRepository.findAllLocalities({ q, provinceId, limit });
+  const localities = await localityRepository.findAll({ q, provinceId, limit });
   return localities.map(serializeLocality);
 };
 
 export const getLocality = async (id) => {
-  const l = await territoryRepository.findLocalityByIdWithProvince(id);
+  const l = await localityRepository.findByIdWithProvince(id);
   if (!l) throw notFound('Localidad');
   return serializeLocality(l);
 };
@@ -49,26 +48,26 @@ export const getLocality = async (id) => {
 export const createLocality = async (body = {}) => {
   const d = localityData(body);
   required(d, ['name']);
-  if (d.provinceId && !(await territoryRepository.findProvinceById(d.provinceId))) throw badRequest('La provincia no existe');
+  if (d.provinceId && !(await provinceExists(d.provinceId))) throw badRequest('La provincia no existe');
   const id = String(body.id || `m-${Date.now().toString(36)}`).slice(0, 20);
-  if (await territoryRepository.findLocalityById(id)) throw conflict('Ya existe una localidad con ese id');
-  const l = await territoryRepository.createLocality({ ...d, id });
+  if (await localityRepository.findById(id)) throw conflict('Ya existe una localidad con ese id');
+  const l = await localityRepository.create({ ...d, id });
   return serializeLocality(l);
 };
 
 export const updateLocality = async (id, body = {}) => {
-  const l = await territoryRepository.findLocalityById(id);
+  const l = await localityRepository.findById(id);
   if (!l) throw notFound('Localidad');
-  await territoryRepository.updateLocality(l, localityData(body));
+  await localityRepository.update(l, localityData(body));
   return serializeLocality(l);
 };
 
 export const removeLocality = async (id) => {
-  const l = await territoryRepository.findLocalityById(id);
+  const l = await localityRepository.findById(id);
   if (!l) throw notFound('Localidad');
-  const used = await territoryRepository.countCompaniesInLocality(l.id);
+  const used = await localityRepository.countCompanies(l.id);
   if (used) throw conflict(`No se puede eliminar: ${used} empresas están en esta localidad.`);
-  await territoryRepository.destroyLocality(l);
+  await localityRepository.destroy(l);
   return { message: 'Localidad eliminada' };
 };
 
@@ -77,7 +76,7 @@ export const removeLocality = async (id) => {
 // localidad manual (luego seed-localities la une con la oficial).
 export const resolveLocality = async ({ localityId, locality, postalCode }, { transaction } = {}) => {
   if (localityId) {
-    const l = await territoryRepository.findLocalityById(String(localityId), { transaction });
+    const l = await localityRepository.findById(String(localityId), { transaction });
     if (!l) throw badRequest('La localidad indicada no existe', { localityId: 'missing' });
     return l.id;
   }
@@ -87,11 +86,11 @@ export const resolveLocality = async ({ localityId, locality, postalCode }, { tr
   const where = {};
   if (name) where.name = name;
   if (cp) where.postalCode = cp;
-  let l = await territoryRepository.findLocalityOne(where, { transaction });
-  if (!l && name) l = await territoryRepository.findLocalityOne({ name }, { transaction });
+  let l = await localityRepository.findOne(where, { transaction });
+  if (!l && name) l = await localityRepository.findOne({ name }, { transaction });
   if (l) return l.id;
   if (!name) throw badRequest('Indicá el nombre de la localidad', { locality: 'required' });
-  const id = cp && !(await territoryRepository.findLocalityById(`cp-${cp}`, { transaction })) ? `cp-${cp}` : `m-${Date.now().toString(36)}`;
-  l = await territoryRepository.createLocality({ id, name, postalCode: cp || null }, { transaction });
+  const id = cp && !(await localityRepository.findById(`cp-${cp}`, { transaction })) ? `cp-${cp}` : `m-${Date.now().toString(36)}`;
+  l = await localityRepository.create({ id, name, postalCode: cp || null }, { transaction });
   return l.id;
 };

@@ -1,7 +1,7 @@
 import { Op, literal } from 'sequelize';
 import {
   sequelize, Company, Locality, Province, Contact, ContactPhone, User, Crop,
-  ServiceOrder, ServiceEvaluation, CatalogItem, UserLocality,
+  ServiceOrder, ServiceEvaluation, CatalogItem,
 } from '../../shared/models/index.js';
 import { OPEN_STATUSES } from '../opportunity/opportunity.entity.js';
 
@@ -95,22 +95,8 @@ export const restore = (company) =>
 export const setCrops = (company, cropIds, transaction) =>
   company.setCrops(cropIds, { transaction });
 
-export const findAllCrops = () =>
-  Crop.findAll({ order: [['name', 'ASC']] });
-
-export const createCrop = (data) =>
-  Crop.create(data);
-
 export const findUserById = (id, options = {}) =>
   User.findByPk(String(id), options);
-
-export const hasUserLocality = async (userId, localityId) =>
-  Boolean(await UserLocality.findOne({ where: { userId, localityId } }));
-
-export const findUserLocalityIds = async (userId) => {
-  const rows = await UserLocality.findAll({ where: { userId }, attributes: ['localityId'] });
-  return rows.map((z) => z.localityId);
-};
 
 export const findContactById = (id, options = {}) =>
   Contact.findByPk(id, options);

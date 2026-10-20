@@ -52,13 +52,3 @@ export const dashboard = asyncHandler(async (req, res) => {
   const data = await companyService.getCompanyDashboard(idParam(req), req.query);
   res.json({ data });
 });
-
-export const listCrops = asyncHandler(async (req, res) => {
-  const data = await companyService.listCrops();
-  res.json({ data });
-});
-
-export const createCrop = asyncHandler(async (req, res) => {
-  const data = await companyService.createCrop(req.body);
-  res.status(201).json({ message: 'Cultivo creado', data });
-});
