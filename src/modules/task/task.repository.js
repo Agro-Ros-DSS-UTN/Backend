@@ -2,8 +2,6 @@ import { Op } from 'sequelize';
 import {
   sequelize, Task, TaskAssignee, User, Company, Contact, ContactPhone, Activity, Opportunity,
 } from '../../shared/models/index.js';
-import { createCalendarEventForAssignee, deleteCalendarEvent } from '../../shared/services/calendarIntegration.js';
-import { sendTaskReminderEmail } from '../../shared/services/emailReminders.js';
 
 export const includeTask = [
   { model: TaskAssignee, as: 'assignments', include: [{ model: User, as: 'user', attributes: ['idUser', 'fullName', 'role', 'email'] }] },
@@ -111,14 +109,3 @@ export const findActivityById = (id, transaction) =>
 
 export const runTransaction = (fn) =>
   sequelize.transaction(fn);
-
-// ── Comunicación con servicios externos (Google Calendar y SMTP) ──
-
-export const createExternalCalendarEvent = (task, user) =>
-  createCalendarEventForAssignee(task, user);
-
-export const deleteExternalCalendarEvent = (eventId) =>
-  deleteCalendarEvent(eventId);
-
-export const sendReminderEmail = (task, user, hoursBefore) =>
-  sendTaskReminderEmail(task, user, hoursBefore);

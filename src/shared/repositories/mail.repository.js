@@ -2,6 +2,8 @@
 import nodemailer from 'nodemailer';
 import { escapeHtml as h } from '../utils/validation.js';
 
+// Repository de correo: acceso a un servicio externo (SMTP), igual que los
+// repositories de cada entidad acceden a la base.
 // Envío de recordatorios por email 48hs/24hs antes del vencimiento de una
 // tarea. Usa SMTP estándar (funciona con Gmail + "Contraseña de aplicación",
 // Google Workspace, SendGrid, o cualquier proveedor que exponga un relay
@@ -22,7 +24,7 @@ const warnNotConfigured = () => {
   if (warnedOnce) return;
   warnedOnce = true;
   console.warn(
-    '[emailReminders] SMTP no está configurado (faltan SMTP_HOST / SMTP_USER / SMTP_PASS en el .env) — se omiten los recordatorios por mail.'
+    '[mail] SMTP no está configurado (faltan SMTP_HOST / SMTP_USER / SMTP_PASS en el .env) — se omiten los recordatorios por mail.'
   );
 };
 
@@ -53,7 +55,7 @@ const buildHtml = (task, user, hoursBefore) => `
 `;
 
 // No lanza: devuelve { success, reason? } para que el caller decida qué hacer.
-export const sendTaskReminderEmail = async (task, user, hoursBefore) => {
+export const sendTaskReminder = async (task, user, hoursBefore) => {
   if (!isConfigured()) {
     warnNotConfigured();
     return { success: false, reason: 'not_configured' };
@@ -71,7 +73,7 @@ export const sendTaskReminderEmail = async (task, user, hoursBefore) => {
     });
     return { success: true };
   } catch (error) {
-    console.error('[emailReminders] Error enviando recordatorio por mail:', error.message);
+    console.error('[mail] Error enviando recordatorio por mail:', error.message);
     return { success: false, reason: 'smtp_error', error: error.message };
   }
 };

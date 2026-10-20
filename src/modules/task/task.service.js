@@ -1,5 +1,7 @@
 import { TASK_TYPES, LEVELS, TASK_STATUSES } from './task.entity.js';
 import * as taskRepository from './task.repository.js';
+import * as googleCalendarRepository from '../../shared/repositories/googleCalendar.repository.js';
+import * as mailRepository from '../../shared/repositories/mail.repository.js';
 import { badRequest, forbidden, notFound, toInt } from '../../shared/utils/http.js';
 import { parseDate, required, text, oneOf } from '../../shared/utils/validation.js';
 import { createNotification } from '../notification/notification.service.js';
@@ -140,7 +142,7 @@ const syncAssignees = async (task, ids, transaction) => {
   const current = await taskRepository.findAssignmentsByTask(task.id, { transaction });
   const toRemove = current.filter((a) => !unique.includes(a.userId));
   for (const a of toRemove) {
-    if (a.calendarEventId) taskRepository.deleteExternalCalendarEvent(a.calendarEventId).catch(() => {});
+    if (a.calendarEventId) googleCalendarRepository.deleteEvent(a.calendarEventId).catch(() => {});
     await taskRepository.destroyAssignment(a, { transaction });
   }
   const add = unique.filter((id) => !current.some((a) => a.userId === id));
@@ -158,7 +160,7 @@ const afterAssign = async ({ currentUserId, currentUserFullName }, task, added) 
     }
     const row = await taskRepository.findAssignmentWithUser(task.id, userId);
     if (row?.user) {
-      const r = await taskRepository.createExternalCalendarEvent(task, row.user);
+      const r = await googleCalendarRepository.createEventForAssignee(task, row.user);
       if (r.success) await taskRepository.updateAssignment(row, { calendarEventId: r.eventId });
     }
   }
@@ -260,7 +262,7 @@ export const removeTask = async (id, { admin, currentUserId }) => {
   const assignments = await taskRepository.findAssignmentsByTask(t.id);
   await taskRepository.destroyWithAssignees(t);
   for (const a of assignments) {
-    if (a.calendarEventId) taskRepository.deleteExternalCalendarEvent(a.calendarEventId).catch(() => {});
+    if (a.calendarEventId) googleCalendarRepository.deleteEvent(a.calendarEventId).catch(() => {});
   }
   return { message: 'Tarea eliminada', id: t.id };
 };
@@ -284,14 +286,14 @@ export const runTaskReminderSweep = async () => {
     const hours = (v.getTime() - now) / 3600000;
     if (hours < 0) continue;
     if (!row.reminder48hSent && hours <= 48) {
-      if ((await taskRepository.sendReminderEmail(row.task, row.user, 48)).success) {
+      if ((await mailRepository.sendTaskReminder(row.task, row.user, 48)).success) {
         row.reminder48hSent = true;
         await taskRepository.saveAssignment(row);
         sent48++;
       }
     }
     if (!row.reminder24hSent && hours <= 24) {
-      if ((await taskRepository.sendReminderEmail(row.task, row.user, 24)).success) {
+      if ((await mailRepository.sendTaskReminder(row.task, row.user, 24)).success) {
         row.reminder24hSent = true;
         await taskRepository.saveAssignment(row);
         sent24++;

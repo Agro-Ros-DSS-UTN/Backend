@@ -1,7 +1,8 @@
 /* eslint-disable */
 import { google } from 'googleapis';
 
-// Integración con Google Calendar vía Service Account (no OAuth por usuario):
+// Repository de Google Calendar: acceso a una API externa, igual que los repositories
+// de cada entidad acceden a la base. Usa una Service Account (no OAuth por usuario):
 // un único calendario compartido ("Tareas CRM Agroquímica Rosario" o el que
 // se elija) donde se crea un evento por cada (tarea, usuario asignado), con
 // el usuario invitado como "guest" por su email real — así también le llega
@@ -41,7 +42,7 @@ const warnNotConfigured = () => {
   if (warnedOnce) return;
   warnedOnce = true;
   console.warn(
-    '[calendarIntegration] Google Calendar no está configurado (faltan GOOGLE_CALENDAR_ID / GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY en el .env) — se omiten los eventos de calendario.'
+    '[googleCalendar] Google Calendar no está configurado (faltan GOOGLE_CALENDAR_ID / GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY en el .env) — se omiten los eventos de calendario.'
   );
 };
 
@@ -66,7 +67,7 @@ const buildEventTimes = (task) => {
 
 // Crea un evento para un asignado puntual de la tarea. No lanza: devuelve
 // { success, eventId? , reason? } para que el caller decida qué hacer.
-export const createCalendarEventForAssignee = async (task, user) => {
+export const createEventForAssignee = async (task, user) => {
   if (!isConfigured()) {
     warnNotConfigured();
     return { success: false, reason: 'not_configured' };
@@ -93,19 +94,19 @@ export const createCalendarEventForAssignee = async (task, user) => {
 
     return { success: true, eventId: event.data.id };
   } catch (error) {
-    console.error('[calendarIntegration] Error creando evento de Calendar:', error.message);
+    console.error('[googleCalendar] Error creando evento de Calendar:', error.message);
     return { success: false, reason: 'google_api_error', error: error.message };
   }
 };
 
-export const deleteCalendarEvent = async (eventId) => {
+export const deleteEvent = async (eventId) => {
   if (!isConfigured() || !eventId) return { success: false, reason: 'not_configured' };
   try {
     const calendar = getCalendarClient();
     await calendar.events.delete({ calendarId: process.env.GOOGLE_CALENDAR_ID, eventId });
     return { success: true };
   } catch (error) {
-    console.error('[calendarIntegration] Error eliminando evento de Calendar:', error.message);
+    console.error('[googleCalendar] Error eliminando evento de Calendar:', error.message);
     return { success: false, reason: 'google_api_error', error: error.message };
   }
 };
