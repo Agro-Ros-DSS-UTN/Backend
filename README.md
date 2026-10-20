@@ -36,14 +36,86 @@ Optimizar la operativa comercial de la empresa mediante:
 
 ## Arquitectura y stack tecnológico
 
-El proyecto se desarrolla bajo arquitectura **MVC**.
-
-| Capa | Tecnología |
+| Parte | Tecnología |
 |---|---|
-| Backend | Node.js + Express (JavaScript) |
-| Frontend | HTML + CSS |
-| Base de datos | MySQL |
-| Autenticación | JWT |
+| Frontend | React 18 + Vite + React Router (JavaScript), Leaflet para los mapas — repositorio aparte |
+| Backend | Node.js + Express 5 + Sequelize 6 (JavaScript, módulos ES), API REST |
+| Base de datos | MariaDB 11 (compatible con MySQL) en Hostinger; el esquema lo manejan migraciones versionadas |
+| Autenticación | JWT con permisos por rol (administrador / vendedor) |
+| Servicios externos | Correo SMTP (recordatorios de tareas) y Google Calendar (opcionales) |
+| Despliegue | Hostinger publica la rama `main` de cada repositorio |
+
+### Backend en capas
+
+Cada entidad del modelo de dominio tiene su carpeta en `src/modules/<entidad>/` con estas capas:
+
+| Capa | Archivo | Qué hace | Qué **no** hace |
+|---|---|---|---|
+| Rutas | `xxx.routes.js` | Dice qué método y dirección llama a qué controlador, y qué middlewares pasan antes (rol de administrador, límite de intentos). | No tiene lógica. |
+| Controller | `xxx.controller.js` | Recibe la request, toma los datos (`req.body`, `req.params`, el usuario del token) y devuelve la response con su código HTTP. | No decide reglas de negocio ni toca la base. |
+| Service | `xxx.service.js` | La **lógica de negocio**: validaciones, permisos de propiedad (un vendedor solo ve lo suyo), cálculos, transacciones y cómo se arma el JSON de respuesta. | No escribe consultas: le pide los datos al repository. |
+| Repository | `xxx.repository.js` | Todo el **acceso a datos**: consultas Sequelize a la base. Las APIs externas también son repositories (`src/shared/repositories/mail.repository.js`, `googleCalendar.repository.js`). | No decide reglas. |
+| Entity | `xxx.entity.js` | El modelo Sequelize de **una tabla**: columnas, tipos y valores permitidos. | No tiene lógica de negocio. |
+
+Las tablas de detalle o intermedias (por ejemplo `opportunityItem`, `roadmapStop`, `taskAssignee`) tienen solo su
+entity, en la carpeta de su entidad principal, y las maneja el repository de esa entidad. Las relaciones entre
+entities están todas juntas en `src/shared/models/index.js`.
+
+**Ejemplo: `POST /opportunities` (crear una oportunidad)**
+
+1. `server.js` aplica lo común a toda la API: cabeceras de seguridad, CORS, límite de pedidos y
+   `authenticateAll`, que verifica el token y deja el usuario en `req.user`.
+2. **Rutas** — `src/shared/routes/index.js` monta `opportunity.routes.js`, que tiene
+   `router.post('/opportunities', opportunities.create)`.
+3. **Controller** — `opportunity.controller.create` le pasa a la capa de servicio el body y quién es el usuario
+   (`admin`, `currentUserId`) y responde `201 { message: 'Oportunidad creada', data }`.
+4. **Service** — `opportunity.service.createNewOpportunity` abre una transacción y aplica las reglas: título por
+   defecto, empresa obligatoria, un vendedor solo puede crearla a su nombre, la empresa, el contacto y el responsable
+   tienen que existir, estado inicial `Prospecto`, y guarda los productos/servicios ofrecidos.
+5. **Repository** — `opportunity.repository` hace las consultas: `findCompanyById`, `create`, `replaceItems`,
+   `findByIdWithSummary`.
+6. **Entity** — `Opportunity` (`opportunity.entity.js`) y `OpportunityItem` (`opportunityItem.entity.js`).
+7. **Base** — se insertan filas en `opportunities` y `opportunity_items`.
+
+Si algo falla, el service lanza un error (`badRequest`, `forbidden`…) y `errorHandler.middleware.js` lo
+convierte en `{ message, code, fields }` con el código HTTP correspondiente.
+
+### Carpetas del backend
+
+```text
+server.js                      Arranque: seguridad, autenticación, rutas, verificación de migraciones
+src/
+├── modules/                   Una carpeta por entidad
+│   ├── activity/              activity.{routes,controller,service,repository,entity}.js + attachment.entity.js
+│   ├── catalog-item/          catalogItem.* (productos y servicios: /catalog, /products, /services)
+│   ├── company/               company.* + companyCrop.entity.js
+│   ├── contact/               contact.* + contactPhone.entity.js
+│   ├── crop/                  crop.*
+│   ├── dashboard/             dashboard.{routes,controller,service,repository}.js (tablero general, sin tabla propia)
+│   ├── employee/              employee.*
+│   ├── internal-note/         internalNote.*
+│   ├── locality/              locality.*
+│   ├── notification/          notification.*
+│   ├── objective/             objective.* + objectiveCompany/objectiveItem/objectivePromotion.entity.js
+│   ├── opportunity/           opportunity.* + opportunityItem.entity.js
+│   ├── product-line/          productLine.*
+│   ├── promotion/             promotion.* + promotionItem.entity.js
+│   ├── province/              province.*
+│   ├── roadmap/               roadmap.* + roadmapStop.entity.js
+│   ├── service-order/         serviceOrder.* + serviceOrderEmployee/appliedProduct/serviceEvaluation.entity.js
+│   ├── task/                  task.* + taskAssignee.entity.js + taskReminders.job.js
+│   └── user/                  user.* (incluye /auth) + userLocality.entity.js (zona del vendedor)
+└── shared/                    Lo que usan todos los módulos
+    ├── config/                Variables de entorno validadas (env.js) y conexión a la base (database.js)
+    ├── db/                    Motor de migraciones (migrator.js, schema.js); las migraciones quedan solo en la PC
+    ├── middlewares/           Autenticación y roles, seguridad (CORS, límites), manejo de errores
+    ├── models/index.js        Importa cada entity y declara las relaciones entre tablas
+    ├── repositories/          APIs externas: mail.repository.js (SMTP), googleCalendar.repository.js
+    ├── routes/index.js        Monta los xxx.routes.js de cada entidad
+    └── utils/                 Respuestas y errores HTTP (http.js), validación de datos (validation.js)
+```
+
+`xxx.*` indica los cinco archivos de la entidad: `routes`, `controller`, `service`, `repository` y `entity`.
 
 ## Modelo de dominio (resumen)
 
