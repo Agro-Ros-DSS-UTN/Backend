@@ -273,38 +273,84 @@ export const restoreCompany = async (id) => {
   return serializeCompany(company);
 };
 
+// Período del tablero de servicios:
+//   - months=6|12|24 → últimos N meses (por defecto 12; lo usa la ficha de la empresa)
+//   - period=all     → todo el historial
+//   - from / to      → fechas elegidas (AAAA-MM-DD; "to" vacío = hoy)
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const todayStr = () => new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+
+const resolvePeriod = (query = {}) => {
+  const to = todayStr();
+  if (String(query.period) === 'all') return { type: 'all', from: null, to };
+  if (query.from || query.to) {
+    const from = query.from ? String(query.from) : null;
+    const until = query.to ? String(query.to) : to;
+    if ((from && !DATE_RE.test(from)) || !DATE_RE.test(until)) {
+      throw badRequest('Las fechas del período tienen que tener el formato AAAA-MM-DD', { from: 'format', to: 'format' });
+    }
+    if (from && from > until) throw badRequest('La fecha "desde" no puede ser posterior a "hasta"', { from: 'range' });
+    return { type: 'range', from, to: until };
+  }
+  const months = [6, 12, 24].includes(Number(query.months)) ? Number(query.months) : 12;
+  const start = new Date(to + 'T12:00:00Z');
+  start.setUTCMonth(start.getUTCMonth() - months + 1, 1);
+  return { type: 'months', months, from: start.toISOString().slice(0, 10), to };
+};
+
+// Meses "AAAA-MM" desde/hasta (inclusive).
+const monthsBetween = (fromKey, toKey) => {
+  const out = [];
+  let [y, m] = fromKey.split('-').map(Number);
+  const [ty, tm] = toKey.split('-').map(Number);
+  while (y < ty || (y === ty && m <= tm)) {
+    out.push(y + '-' + String(m).padStart(2, '0'));
+    m += 1;
+    if (m > 12) { m = 1; y += 1; }
+  }
+  return out;
+};
+
+// Fecha en que se hizo el servicio (la programada si no tiene fecha de realización).
+const doneDate = (o) => String(o.completedDate || o.scheduledDate || '');
+
 // CUU06: tablero de servicios de la empresa para mostrarle al cliente.
 // Incluye las sucursales de la empresa. Si no tiene órdenes, devuelve los
 // indicadores generales de la provincia sin datos que identifiquen a otros clientes.
 export const getCompanyDashboard = async (id, query = {}) => {
   const company = await companyRepository.findByIdWithLocality(id);
   if (!company) throw notFound('Empresa');
-  const months = [6, 12, 24].includes(Number(query.months)) ? Number(query.months) : 12;
-  const from = new Date();
-  from.setUTCMonth(from.getUTCMonth() - months + 1, 1);
-  const fromStr = from.toISOString().slice(0, 10);
+  const period = resolvePeriod(query);
+  const inPeriod = (date) => Boolean(date) && (!period.from || date >= period.from) && date <= period.to;
 
   const serviceWhere = query.serviceType ? { serviceType: String(query.serviceType) } : undefined;
   const calculate = async (companyIds) => {
-    const orders = await companyRepository.findServiceOrdersForDashboard({ companyIds, fromStr, serviceWhere });
-    const completed = orders.filter((o) => o.status === 'Completada');
+    const orders = await companyRepository.findServiceOrdersForDashboard({ companyIds, fromStr: period.from, toStr: period.to, serviceWhere });
+    const completed = orders.filter((o) => o.status === 'Completada' && inPeriod(doneDate(o)));
     const onDate = completed.filter((o) => o.completedDate && o.completedDate <= o.scheduledDate);
     const sat = completed.map((o) => o.evaluation?.customerSatisfaction).filter((n) => n);
-    const byMonth = [];
-    for (let i = 0; i < months; i++) {
-      const d = new Date(from);
-      d.setUTCMonth(from.getUTCMonth() + i);
-      const key = d.toISOString().slice(0, 7);
-      const ofMonth = completed.filter((o) => String(o.completedDate || o.scheduledDate).startsWith(key));
-      byMonth.push({
+    // Con "todo el historial" la serie arranca en el mes del primer servicio realizado
+    // (y muestra al menos los últimos 6 meses, para que el gráfico tenga forma).
+    const sixMonthsAgo = (() => {
+      const d = new Date(period.to + 'T12:00:00Z');
+      d.setUTCMonth(d.getUTCMonth() - 5, 1);
+      return d.toISOString().slice(0, 7);
+    })();
+    const firstDone = (completed.map(doneDate).sort()[0] || period.to).slice(0, 7);
+    const firstKey = period.from
+      ? period.from.slice(0, 7)
+      : (firstDone < sixMonthsAgo ? firstDone : sixMonthsAgo);
+    const byMonth = monthsBetween(firstKey, period.to.slice(0, 7)).map((key) => {
+      const ofMonth = completed.filter((o) => doneDate(o).startsWith(key));
+      return {
         month: key,
         completed: ofMonth.length,
         // Servicios exitosos (evaluación "Sin insectos vivos") y realizados en la fecha programada:
-        // los usa el gráfico "Servicios cumplidos por empresa" del tablero general.
+        // los usa el gráfico "Servicios cumplidos por cliente" del tablero general.
         effective: ofMonth.filter((o) => efficacyOf(o.evaluation?.result) === 'effective').length,
         onTime: ofMonth.filter((o) => o.completedDate && o.completedDate <= o.scheduledDate).length,
-      });
-    }
+      };
+    });
     const results = { effective: 0, partial: 0, ineffective: 0, notEvaluated: 0 };
     for (const o of completed) {
       const ef = efficacyOf(o.evaluation?.result);
@@ -317,14 +363,14 @@ export const getCompanyDashboard = async (id, query = {}) => {
     }
     return {
       completedOrders: completed.length,
-      scheduledOrders: orders.filter((o) => o.status === 'Programada' || o.status === 'En Ejecución').length,
+      scheduledOrders: orders.filter((o) => (o.status === 'Programada' || o.status === 'En Ejecución') && inPeriod(String(o.scheduledDate || ''))).length,
       onTimeRate: completed.length ? Math.round((onDate.length / completed.length) * 1000) / 10 : null,
       averageSatisfaction: sat.length ? Math.round((sat.reduce((a, b) => a + b, 0) / sat.length) * 10) / 10 : null,
       evaluations: sat.length,
       results,
       byMonth,
       topServices: Object.entries(byService).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, quantity]) => ({ name, quantity })),
-      orders,
+      completed,
     };
   };
 
@@ -343,33 +389,36 @@ export const getCompanyDashboard = async (id, query = {}) => {
     data = await calculate(zoneIds);
     scope = provinceId ? 'province' : 'general';
   }
-  const { orders, ...indicators } = data;
+  const { completed, ...indicators } = data;
+  const newestFirst = (a, b) => doneDate(b).localeCompare(doneDate(a));
+  const firstMonth = indicators.byMonth[0]?.month;
   return {
     company: { id: company.id, legalName: company.legalName },
     scope,
-    months,
+    months: indicators.byMonth.length,
+    period: { type: period.type, from: period.from ?? (firstMonth ? firstMonth + '-01' : null), to: period.to },
     updatedAt: new Date().toISOString(),
     ...indicators,
     // El detalle de órdenes solo se muestra cuando son de la propia empresa.
     latestOrders: scope === 'company'
-      ? orders.filter((o) => o.status === 'Completada').slice(-5).reverse().map((o) => ({
-          orderNumber: o.orderNumber, date: o.completedDate || o.scheduledDate, service: o.service?.name || o.workType,
+      ? [...completed].sort(newestFirst).slice(0, 5).map((o) => ({
+          orderNumber: o.orderNumber, date: doneDate(o), service: o.service?.name || o.workType,
           result: o.evaluation?.result || null, satisfaction: o.evaluation?.customerSatisfaction || null,
         }))
       : [],
     // Todas las órdenes exitosas del período (solo de la propia empresa): respaldo para negociar.
     successfulOrders: scope === 'company'
-      ? orders
-        .filter((o) => o.status === 'Completada' && efficacyOf(o.evaluation?.result) === 'effective')
+      ? completed
+        .filter((o) => efficacyOf(o.evaluation?.result) === 'effective')
+        .sort(newestFirst)
         .map((o) => ({
           orderNumber: o.orderNumber,
           evaluationNumber: o.evaluation?.evaluationNumber || null,
-          date: o.completedDate || o.scheduledDate,
+          date: doneDate(o),
           service: o.service?.name || o.workType,
           onTime: Boolean(o.completedDate && o.completedDate <= o.scheduledDate),
           satisfaction: o.evaluation?.customerSatisfaction || null,
         }))
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
       : [],
   };
 };

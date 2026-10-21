@@ -110,12 +110,14 @@ export const createContact = (data, options = {}) =>
 export const createContactPhone = (data, options = {}) =>
   ContactPhone.create(data, options);
 
-export const findServiceOrdersForDashboard = ({ companyIds, fromStr, serviceWhere }) =>
+// Órdenes programadas o realizadas dentro del período (fromStr vacío = desde el principio).
+const withinPeriod = (field, fromStr, toStr) => ({ [field]: { ...(fromStr ? { [Op.gte]: fromStr } : {}), [Op.lte]: toStr } });
+
+export const findServiceOrdersForDashboard = ({ companyIds, fromStr, toStr, serviceWhere }) =>
   ServiceOrder.findAll({
     where: {
       ...(companyIds ? { companyId: { [Op.in]: companyIds } } : {}),
-      // Entra si se programó o se realizó dentro del período (se agrupa por fecha de realización).
-      [Op.or]: [{ scheduledDate: { [Op.gte]: fromStr } }, { completedDate: { [Op.gte]: fromStr } }],
+      [Op.or]: [withinPeriod('scheduledDate', fromStr, toStr), withinPeriod('completedDate', fromStr, toStr)],
     },
     include: [
       { model: ServiceEvaluation, as: 'evaluation', attributes: ['evaluationNumber', 'result', 'customerSatisfaction', 'evaluationDate'] },
