@@ -49,7 +49,11 @@ export const listPromotions = async (query = {}) => {
   const activeDate = query.active === '1'
     ? new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10)
     : undefined;
-  const promos = await promotionRepository.findAll({ activeDate });
+  const promos = await promotionRepository.findAll({
+    activeDate,
+    page: query.page,
+    limit: query.limit,
+  });
   return promos.map(serializePromotion);
 };
 

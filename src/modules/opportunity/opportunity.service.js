@@ -138,7 +138,8 @@ export const listOpportunities = async (query = {}, { admin, currentUserId }) =>
   const open = query.open === '1';
   const companyId = query.companyId ? toInt(query.companyId) : undefined;
   const forActivity = query.forActivity === '1' && Boolean(companyId);
-  const limit = Math.min(Number(query.limit) || 1000, 2000);
+  const limit = query.limit ? Math.min(Number(query.limit) || 1000, 2000) : undefined;
+  const page = query.page ? Number(query.page) : undefined;
   const paranoid = !(admin && query.includeDeleted === '1');
   const opportunities = await opportunityRepository.findAll({
     status,
@@ -149,6 +150,7 @@ export const listOpportunities = async (query = {}, { admin, currentUserId }) =>
     currentUserId,
     userId: query.userId,
     limit,
+    page,
     paranoid,
   });
   return opportunities.map(serializeOpportunity);

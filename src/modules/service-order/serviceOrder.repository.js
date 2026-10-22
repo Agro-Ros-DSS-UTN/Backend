@@ -3,6 +3,7 @@ import {
   sequelize, ServiceOrder, AppliedProduct, ServiceEvaluation, Employee, Company, CatalogItem, Opportunity, User, Activity,
 } from '../../shared/models/index.js';
 import { ORDER_EXECUTOR_ROLES } from '../employee/employee.entity.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeServiceOrder = [
   { model: AppliedProduct, as: 'appliedProducts', include: [{ model: CatalogItem, as: 'item', attributes: ['id', 'name'] }] },
@@ -14,7 +15,7 @@ export const includeServiceOrder = [
   { model: User, as: 'createdBy', attributes: ['idUser', 'fullName'] },
 ];
 
-export const findAll = ({ status, companyId, from, to, paranoid = true }) => {
+export const findAll = ({ status, companyId, from, to, paranoid = true, page, limit }) => {
   const where = {};
   if (status) where.status = status;
   if (companyId) where.companyId = companyId;
@@ -24,12 +25,14 @@ export const findAll = ({ status, companyId, from, to, paranoid = true }) => {
       ...(to ? { [Op.lte]: to } : {}),
     };
   }
-  return ServiceOrder.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includeServiceOrder,
     order: [['scheduledDate', 'DESC'], ['id', 'DESC']],
     paranoid,
-  });
+  }, { page, limit });
+
+  return ServiceOrder.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

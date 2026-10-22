@@ -175,6 +175,8 @@ export const listTasks = async (query = {}, { admin, currentUserId }) => {
     admin,
     currentUserId,
     filterUserId: query.userId,
+    page: query.page,
+    limit: query.limit,
   });
   return tasks.map(serializeTask);
 };

@@ -3,13 +3,14 @@
 // agregan los permisos por rol. Las reglas de propiedad están en el service.
 import { Router } from 'express';
 import { requireAdmin } from '../../shared/middlewares/auth.middleware.js';
+import { cacheFor } from '../../shared/middlewares/security.middleware.js';
 import * as employees from './employee.controller.js';
 
 const router = Router();
 const admin = requireAdmin;
 
-router.get('/employees', admin, employees.list);
-router.get('/employees/:id', admin, employees.get);
+router.get('/employees', admin, cacheFor(300), employees.list);
+router.get('/employees/:id', admin, cacheFor(300), employees.get);
 router.post('/employees', admin, employees.create);
 router.put('/employees/:id', admin, employees.update);
 router.delete('/employees/:id', admin, employees.remove);

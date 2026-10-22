@@ -19,18 +19,38 @@ export const generateToken = (user, { long = false } = {}) =>
     { algorithm: 'HS256', expiresIn: long ? env.jwt.longExpiresIn : env.jwt.expiresIn, issuer: env.jwt.issuer, audience: env.jwt.audience }
   );
 
-// Caché corta de usuarios para no consultar la base en cada request, pero
-// reflejar en segundos una baja, un cambio de rol o de contraseña.
-const cache = new Map();
-const TTL_MS = 30 * 1000;
-export const invalidateUserCache = (idUser) => cache.delete(String(idUser));
+// Caché en memoria para no consultar la base en cada request:
+// TTL de 5 minutos, con invalidación inmediata ante cualquier cambio de usuario/rol/contraseña.
+const userCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+export const invalidateUserCache = (idUser) => userCache.delete(String(idUser));
+
+function getCachedUser(idUser) {
+  const key = String(idUser);
+  const hit = userCache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.user;
+  userCache.delete(key);
+  return null;
+}
+
+function setCachedUser(idUser, user) {
+  const key = String(idUser);
+  userCache.set(key, { user, expires: Date.now() + CACHE_TTL_MS });
+  if (userCache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of userCache) {
+      if (v.expires < now) userCache.delete(k);
+    }
+  }
+}
 
 const loadUser = async (idUser) => {
-  const hit = cache.get(idUser);
-  if (hit && hit.expires > Date.now()) return hit.user;
+  const cached = getCachedUser(idUser);
+  if (cached) return cached;
   const u = await userRepository.findAuthMinimalById(idUser);
   const user = u ? { idUser: u.idUser, fullName: u.fullName, role: normalizeRole(u.role), active: u.accountStatus === 'Activo', tokenVersion: u.tokenVersion } : null;
-  cache.set(idUser, { user, expires: Date.now() + TTL_MS });
+  if (user) setCachedUser(idUser, user);
   return user;
 };
 

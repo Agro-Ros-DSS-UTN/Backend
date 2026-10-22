@@ -4,6 +4,7 @@ import {
   ServiceOrder, ServiceEvaluation, CatalogItem,
 } from '../../shared/models/index.js';
 import { OPEN_STATUSES } from '../opportunity/opportunity.entity.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeBase = [
   { model: Locality, as: 'locality', include: [{ model: Province, as: 'province' }] },
@@ -15,7 +16,7 @@ export const includeWithContacts = [
   { model: Contact, as: 'contacts', include: [{ model: ContactPhone, as: 'phones' }] },
 ];
 
-export const findAll = ({ companyType, localityId, localityIds, q, paranoid = true }) => {
+export const findAll = ({ companyType, localityId, localityIds, q, paranoid = true, page, limit }) => {
   const where = {};
   if (companyType) where.companyType = String(companyType);
   if (localityId) where.localityId = String(localityId);
@@ -27,7 +28,7 @@ export const findAll = ({ companyType, localityId, localityIds, q, paranoid = tr
       { cuit: { [Op.like]: `%${q}%` } },
     ];
   }
-  return Company.findAll({
+  const queryOptions = applyPagination({
     where,
     paranoid,
     include: [
@@ -38,7 +39,9 @@ export const findAll = ({ companyType, localityId, localityIds, q, paranoid = tr
       include: [[literal(`(SELECT COUNT(*) FROM opportunities o WHERE o.company_id = Company.id AND o.deleted_at IS NULL AND o.status IN (${OPEN_STATUSES.map((e) => `'${e}'`).join(',')}))`), 'openOpportunities']],
     },
     order: [['legalName', 'ASC']],
-  });
+  }, { page, limit });
+
+  return Company.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

@@ -159,8 +159,8 @@ export const listActivities = async (query = {}, { admin, currentUserId }) => {
   const to = parseDate(query.to, 'to');
   const fromDate = from ? parseDateTime(from) : undefined;
   const toDate = to ? new Date(parseDateTime(to).getTime() + 86400000) : undefined;
-  const companyId = toInt(query.companyId);
-  const limit = Math.min(Number(query.limit) || 1000, 3000);
+  const page = query.page ? Number(query.page) : undefined;
+  const limit = query.limit ? Math.min(Number(query.limit) || 1000, 3000) : undefined;
   const activities = await activityRepository.findAll({
     userId,
     opportunityId,
@@ -169,6 +169,7 @@ export const listActivities = async (query = {}, { admin, currentUserId }) => {
     toDate,
     companyId,
     limit,
+    page,
   });
   return activities.map(serializeActivity);
 };

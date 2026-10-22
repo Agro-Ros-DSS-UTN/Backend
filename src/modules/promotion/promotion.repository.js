@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { sequelize, Promotion, CatalogItem, ProductLine } from '../../shared/models/index.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includePromotion = [
   {
@@ -11,17 +12,19 @@ export const includePromotion = [
   },
 ];
 
-export const findAll = ({ activeDate }) => {
+export const findAll = ({ activeDate, page, limit }) => {
   const where = {};
   if (activeDate) {
     where.startDate = { [Op.lte]: activeDate };
     where.endDate = { [Op.gte]: activeDate };
   }
-  return Promotion.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includePromotion,
     order: [['startDate', 'DESC'], ['id', 'DESC']],
-  });
+  }, { page, limit });
+
+  return Promotion.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

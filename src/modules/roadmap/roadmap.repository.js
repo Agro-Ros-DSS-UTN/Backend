@@ -1,4 +1,5 @@
 import { sequelize, Roadmap, RoadmapStop, User, Company, Activity, Locality } from '../../shared/models/index.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeRoadmap = [
   {
@@ -21,15 +22,17 @@ export const includeRoadmap = [
 
 export const orderRoadmap = [['date', 'DESC'], [{ model: RoadmapStop, as: 'stops' }, 'sortOrder', 'ASC']];
 
-export const findAll = ({ userId, status }) => {
+export const findAll = ({ userId, status, page, limit }) => {
   const where = {};
   if (userId) where.userId = userId;
   if (status) where.status = status;
-  return Roadmap.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includeRoadmap,
     order: orderRoadmap,
-  });
+  }, { page, limit });
+
+  return Roadmap.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

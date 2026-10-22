@@ -66,6 +66,14 @@ export const env = {
     sslRejectUnauthorized: bool('DB_SSL_REJECT_UNAUTHORIZED', Boolean(process.env.DB_SSL_CA)),
     logging: bool('DB_LOGGING', false),
   },
+  // Conexiones del pool para Sequelize
+  dbPool: {
+    max: Number(process.env.DB_POOL_MAX) || 10,
+    min: Number(process.env.DB_POOL_MIN) || 2,
+    acquire: Number(process.env.DB_POOL_ACQUIRE) || 30_000,
+    idle: Number(process.env.DB_POOL_IDLE) || 30_000,
+    evict: Number(process.env.DB_POOL_EVICT) || 30_000,
+  },
   // Aplicar migraciones pendientes al arrancar. Apagado por defecto: se
   // ejecutan a mano (npm run db:migrate) después de un respaldo. Si quedan
   // pendientes, el servidor no arranca (evita correr código v2 sobre datos v1).

@@ -130,7 +130,15 @@ export const listServiceOrders = async (query = {}) => {
   const from = parseDate(query.from, 'from');
   const to = parseDate(query.to, 'to');
   const paranoid = query.includeDeleted !== '1';
-  const orders = await serviceOrderRepository.findAll({ status, companyId, from, to, paranoid });
+  const orders = await serviceOrderRepository.findAll({
+    status,
+    companyId,
+    from,
+    to,
+    paranoid,
+    page: query.page,
+    limit: query.limit,
+  });
   return orders.map(serializeServiceOrder);
 };
 

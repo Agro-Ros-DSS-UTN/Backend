@@ -134,7 +134,12 @@ export const listRoadmaps = async (query = {}, { admin, currentUserId }) => {
     userId = String(requested);
   }
   const status = query.status ? oneOf(String(query.status), ROADMAP_STATUSES, 'status') : undefined;
-  const roadmaps = await roadmapRepository.findAll({ userId, status });
+  const roadmaps = await roadmapRepository.findAll({
+    userId,
+    status,
+    page: query.page,
+    limit: query.limit,
+  });
   return roadmaps.map(serializeRoadmap);
 };
 

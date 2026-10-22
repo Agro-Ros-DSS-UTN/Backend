@@ -10,6 +10,7 @@ export const findAuthById = (idUser) => User.scope('auth').findByPk(idUser);
 export const findAuthMinimalById = (idUser) =>
   User.scope('auth').findByPk(idUser, {
     attributes: ['idUser', 'fullName', 'role', 'accountStatus', 'tokenVersion'],
+    raw: true,
   });
 
 export const findWithImageById = (idUser, options = {}) =>

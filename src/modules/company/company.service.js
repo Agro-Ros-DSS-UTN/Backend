@@ -122,6 +122,8 @@ export const listCompanies = async (query = {}, { admin, currentUserId }) => {
     localityIds,
     q: String(query.q || '').trim(),
     paranoid: !includeDeleted,
+    page: query.page,
+    limit: query.limit,
   });
   return companies.map(serializeCompany);
 };

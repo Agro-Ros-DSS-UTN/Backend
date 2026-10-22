@@ -3,6 +3,7 @@ import {
   sequelize, Opportunity, Company, User, Contact, Activity, CatalogItem, ServiceOrder,
 } from '../../shared/models/index.js';
 import { OPEN_STATUSES } from './opportunity.entity.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeOpportunity = [
   { model: Company, as: 'company', attributes: ['id', 'legalName', 'localityId'], paranoid: false },
@@ -10,7 +11,7 @@ export const includeOpportunity = [
   { model: Contact, as: 'contact', attributes: ['id', 'fullName', 'nationalId'], paranoid: false },
 ];
 
-export const findAll = ({ status, open, companyId, forActivity, admin, currentUserId, userId, limit, paranoid = true }) => {
+export const findAll = ({ status, open, companyId, forActivity, admin, currentUserId, userId, limit, page, paranoid = true }) => {
   const where = {};
   if (status) where.status = status;
   if (open) where.status = { [Op.in]: OPEN_STATUSES };
@@ -22,16 +23,17 @@ export const findAll = ({ status, open, companyId, forActivity, admin, currentUs
   } else if (admin && userId) {
     where.userId = String(userId);
   }
-  return Opportunity.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includeOpportunity,
     attributes: {
       include: [[sequelize.literal('(SELECT COUNT(*) FROM activities a WHERE a.opportunity_id = Opportunity.id)'), 'activityCount']],
     },
     order: [['lastActivityAt', 'DESC'], ['id', 'DESC']],
-    limit,
     paranoid,
-  });
+  }, { page, limit });
+
+  return Opportunity.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

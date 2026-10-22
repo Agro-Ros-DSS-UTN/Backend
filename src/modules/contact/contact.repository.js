@@ -1,12 +1,13 @@
 import { Op } from 'sequelize';
 import { sequelize, Contact, ContactPhone, Company, Locality } from '../../shared/models/index.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeContact = [
   { model: Company, as: 'company', attributes: ['id', 'legalName', 'localityId'], include: [{ model: Locality, as: 'locality', attributes: ['id', 'name'] }] },
   { model: ContactPhone, as: 'phones' },
 ];
 
-export const findAll = ({ companyId, q, paranoid = true }) => {
+export const findAll = ({ companyId, q, paranoid = true, page, limit }) => {
   const where = {};
   if (companyId) where.companyId = companyId;
   if (q) {
@@ -16,12 +17,14 @@ export const findAll = ({ companyId, q, paranoid = true }) => {
       { email: { [Op.like]: `%${q}%` } },
     ];
   }
-  return Contact.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includeContact,
     order: [['fullName', 'ASC']],
     paranoid,
-  });
+  }, { page, limit });
+
+  return Contact.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

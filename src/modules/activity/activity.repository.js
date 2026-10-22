@@ -3,6 +3,7 @@ import {
   sequelize, Activity, Attachment, Opportunity, Company, Contact, User, Task, TaskAssignee, ServiceOrder, RoadmapStop, Roadmap,
 } from '../../shared/models/index.js';
 import { OPEN_STATUSES } from '../opportunity/opportunity.entity.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeActivity = [
   {
@@ -18,7 +19,7 @@ export const includeActivity = [
   { model: Task, as: 'tasks', attributes: ['id', 'title', 'status', 'dueDate'] },
 ];
 
-export const findAll = async ({ userId, opportunityId, serviceOrderId, fromDate, toDate, companyId, limit }) => {
+export const findAll = async ({ userId, opportunityId, serviceOrderId, fromDate, toDate, companyId, limit, page }) => {
   const where = {};
   if (userId) where.userId = userId;
   if (opportunityId) where.opportunityId = opportunityId;
@@ -41,12 +42,13 @@ export const findAll = async ({ userId, opportunityId, serviceOrderId, fromDate,
       ],
     }];
   }
-  return Activity.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includeActivity,
     order: [['occurredAt', 'DESC'], ['id', 'DESC']],
-    limit,
-  });
+  }, { page, limit });
+
+  return Activity.findAll(queryOptions);
 };
 
 export const findByIdFull = (id) =>

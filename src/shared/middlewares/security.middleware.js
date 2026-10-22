@@ -12,6 +12,19 @@ export const securityHeaders = (req, res, next) => {
   next();
 };
 
+// Middleware helper para respuestas que pueden cachearse en el navegador/cliente
+export const cacheFor = (seconds) => (req, res, next) => {
+  res.setHeader('Cache-Control', `private, max-age=${seconds}`);
+  next();
+};
+
+// Middleware para rutas que NO deben cachearse bajo ninguna circunstancia
+export const noCache = (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+};
+
 // Limitador de pedidos en memoria (ventana deslizante por clave).
 // Suficiente para una sola instancia del backend; si se escalara a varias,
 // habría que moverlo a un almacenamiento compartido.

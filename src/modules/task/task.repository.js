@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import {
   sequelize, Task, TaskAssignee, User, Company, Contact, ContactPhone, Activity, Opportunity,
 } from '../../shared/models/index.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeTask = [
   { model: TaskAssignee, as: 'assignments', include: [{ model: User, as: 'user', attributes: ['idUser', 'fullName', 'role', 'email'] }] },
@@ -18,7 +19,7 @@ export const includeTask = [
   },
 ];
 
-export const findAll = async ({ status, companyId, admin, currentUserId, filterUserId }) => {
+export const findAll = async ({ status, companyId, admin, currentUserId, filterUserId, page, limit }) => {
   const where = {};
   if (status) where.status = status;
   if (companyId) where.companyId = companyId;
@@ -32,7 +33,8 @@ export const findAll = async ({ status, companyId, admin, currentUserId, filterU
     const assignedRows = await TaskAssignee.findAll({ where: { userId: String(filterUserId) }, attributes: ['taskId'] });
     where.id = { [Op.in]: assignedRows.map((m) => m.taskId).concat(0) };
   }
-  return Task.findAll({ where, include: includeTask, order: [['id', 'DESC']] });
+  const queryOptions = applyPagination({ where, include: includeTask, order: [['id', 'DESC']] }, { page, limit });
+  return Task.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

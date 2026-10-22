@@ -82,7 +82,13 @@ export const listContacts = async (query = {}, { admin } = {}) => {
   const companyId = query.companyId ? toInt(query.companyId) : undefined;
   const q = String(query.q || '').trim();
   const paranoid = !(admin && query.includeDeleted === '1');
-  const contacts = await contactRepository.findAll({ companyId, q, paranoid });
+  const contacts = await contactRepository.findAll({
+    companyId,
+    q,
+    paranoid,
+    page: query.page,
+    limit: query.limit,
+  });
   return contacts.map(serializeContact);
 };
 

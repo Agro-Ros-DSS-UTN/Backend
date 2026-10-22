@@ -3,16 +3,17 @@
 // agregan los permisos por rol. Las reglas de propiedad están en el service.
 import { Router } from 'express';
 import { requireAdmin } from '../../shared/middlewares/auth.middleware.js';
+import { cacheFor } from '../../shared/middlewares/security.middleware.js';
 import * as catalogItems from './catalogItem.controller.js';
 
 const router = Router();
 const admin = requireAdmin;
 
-router.get('/catalog', catalogItems.list);
-router.get('/products', catalogItems.list); // la pantalla de productos muestra ambos tipos
-router.get('/services', catalogItems.listServices);
+router.get('/catalog', cacheFor(300), catalogItems.list);
+router.get('/products', cacheFor(300), catalogItems.list); // la pantalla de productos muestra ambos tipos
+router.get('/services', cacheFor(300), catalogItems.listServices);
 for (const base of ['/catalog', '/products', '/services']) {
-  router.get(`${base}/:id`, catalogItems.get);
+  router.get(`${base}/:id`, cacheFor(300), catalogItems.get);
   router.put(`${base}/:id`, admin, catalogItems.update);
   router.delete(`${base}/:id`, admin, catalogItems.remove);
 }
