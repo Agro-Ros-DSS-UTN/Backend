@@ -1,4 +1,5 @@
 import { asyncHandler, idParam } from '../../shared/utils/http.js';
+import { isAdmin } from '../../shared/middlewares/auth.middleware.js';
 import * as notificationService from './notification.service.js';
 
 export { createNotification } from './notification.service.js';
@@ -6,6 +7,13 @@ export { createNotification } from './notification.service.js';
 export const list = asyncHandler(async (req, res) => {
   const result = await notificationService.listNotifications(req.user.idUser, req.query);
   res.json(result);
+});
+
+export const summary = asyncHandler(async (req, res) => {
+  const data = await notificationService.getNotificationSummary(req.user.idUser || req.user.id, {
+    admin: isAdmin(req),
+  });
+  res.json({ data });
 });
 
 export const markRead = asyncHandler(async (req, res) => {

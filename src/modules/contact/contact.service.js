@@ -1,6 +1,18 @@
 import * as contactRepository from './contact.repository.js';
-import { badRequest, notFound, pick, toInt } from '../../shared/utils/http.js';
+import { badRequest, forbidden, notFound, pick, toInt } from '../../shared/utils/http.js';
 import { required, text } from '../../shared/utils/validation.js';
+import { isLocalityInZone } from '../user/user.service.js';
+
+const canEditContact = async ({ admin, currentUserId } = {}, contact) => {
+  if (admin) return true;
+  if (!contact.companyId) return true;
+  const company = await contactRepository.findCompanyById(contact.companyId);
+  if (!company) return true;
+  if (company.createdById === currentUserId) return true;
+  if (company.localityId && (await isLocalityInZone(currentUserId, company.localityId))) return true;
+  return false;
+};
+
 
 export const serializeContact = (c) => {
   if (!c) return null;
@@ -114,13 +126,26 @@ export const createContact = async (body = {}) => {
   return serializeContact(full);
 };
 
-export const updateContact = async (idOrNationalId, body = {}) => {
+export const updateContact = async (idOrNationalId, body = {}, auth = {}) => {
   const c = await search(idOrNationalId);
   if (!c) throw notFound('Contacto');
+  if (auth && !(await canEditContact(auth, c))) {
+    throw forbidden('No tenés permiso para modificar los contactos de esta empresa');
+  }
   const d = contactData(body);
   if (d.fullName === null) throw badRequest('El nombre no puede quedar vacío');
-  if (d.companyId && !(await contactRepository.findCompanyById(d.companyId))) {
-    throw badRequest('La empresa indicada no existe', { companyId: 'missing' });
+  if (d.companyId) {
+    const targetCompany = await contactRepository.findCompanyById(d.companyId);
+    if (!targetCompany) {
+      throw badRequest('La empresa indicada no existe', { companyId: 'missing' });
+    }
+    if (d.companyId !== c.companyId && auth && !auth.admin) {
+      const allowed = targetCompany.createdById === auth.currentUserId ||
+        (targetCompany.localityId && (await isLocalityInZone(auth.currentUserId, targetCompany.localityId)));
+      if (!allowed) {
+        throw forbidden('No tenés permiso para asociar contactos a esa empresa');
+      }
+    }
   }
   await contactRepository.runTransaction(async (transaction) => {
     await contactRepository.update(c, d, { transaction });

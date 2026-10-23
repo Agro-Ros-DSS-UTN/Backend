@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import cron from 'node-cron';
@@ -34,7 +34,14 @@ app.use(compression({
   threshold: 1024,
   filter: (req, res) => !req.path.startsWith('/auth/') && compression.filter(req, res),
 }));
-app.use(express.json({ limit: env.bodyLimit }));
+app.use((req, res, next) => {
+  const isUploadRoute = req.path.startsWith('/activities') ||
+    req.path.includes('/evaluations') ||
+    req.path.startsWith('/service-orders') ||
+    req.path.includes('/profile-image');
+  const limit = isUploadRoute ? '10mb' : env.bodyLimit;
+  express.json({ limit })(req, res, next);
+});
 app.use(apiLimiter);
 
 // La raíz responde sin sesión, para que abrir la dirección de la API en el

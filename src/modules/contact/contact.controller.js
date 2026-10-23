@@ -20,7 +20,10 @@ export const create = asyncHandler(async (req, res) => {
 });
 
 export const update = asyncHandler(async (req, res) => {
-  const data = await contactService.updateContact(req.params.id, req.body);
+  const data = await contactService.updateContact(req.params.id, req.body, {
+    admin: isAdmin(req),
+    currentUserId: req.user?.idUser || req.user?.id,
+  });
   res.json({ message: 'Contacto actualizado', data });
 });
 

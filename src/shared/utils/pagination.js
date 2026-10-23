@@ -1,8 +1,10 @@
 // Helper reutilizable para aplicar paginación opcional en consultas Sequelize
 export const applyPagination = (queryOptions = {}, filters = {}) => {
-  if (!filters.page && !filters.limit) return queryOptions;
+  if (filters.paginate === false || filters.unlimited === true || filters.limit === 'all' || filters.limit === -1) {
+    return queryOptions;
+  }
   const page = Math.max(1, parseInt(filters.page, 10) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(filters.limit, 10) || 25));
+  const limit = Math.min(100, Math.max(1, parseInt(filters.limit, 10) || 50));
   return {
     ...queryOptions,
     limit,

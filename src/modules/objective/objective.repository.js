@@ -2,6 +2,7 @@ import { Op, fn, col } from 'sequelize';
 import {
   sequelize, Objective, User, Company, CatalogItem, Promotion, Activity, Opportunity, ServiceOrder,
 } from '../../shared/models/index.js';
+import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeObjective = [
   { model: User, as: 'seller', attributes: ['idUser', 'fullName', 'role'] },
@@ -10,18 +11,19 @@ export const includeObjective = [
   { model: Promotion, as: 'promotions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
 ];
 
-export const findAll = ({ userId, activeDate }) => {
+export const findAll = ({ userId, activeDate, page, limit }) => {
   const where = {};
   if (userId) where.userId = userId;
   if (activeDate) {
     where.startDate = { [Op.lte]: activeDate };
     where.endDate = { [Op.gte]: activeDate };
   }
-  return Objective.findAll({
+  const queryOptions = applyPagination({
     where,
     include: includeObjective,
     order: [['startDate', 'DESC'], ['id', 'DESC']],
-  });
+  }, { page, limit });
+  return Objective.findAll(queryOptions);
 };
 
 export const findById = (id, options = {}) =>

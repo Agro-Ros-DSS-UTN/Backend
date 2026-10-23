@@ -22,6 +22,7 @@ import notificationRoutes from '../../modules/notification/notification.routes.j
 import employeeRoutes from '../../modules/employee/employee.routes.js';
 import serviceOrderRoutes from '../../modules/service-order/serviceOrder.routes.js';
 import dashboardRoutes from '../../modules/dashboard/dashboard.routes.js';
+import searchRoutes from '../../modules/search/search.routes.js';
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use(notificationRoutes);
 router.use(employeeRoutes);
 router.use(serviceOrderRoutes);
 router.use(dashboardRoutes);
+router.use(searchRoutes);
 
 export default router;

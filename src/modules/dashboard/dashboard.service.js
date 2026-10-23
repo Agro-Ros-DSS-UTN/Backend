@@ -52,7 +52,7 @@ export const getGeneralDashboard = async () => {
     opportunities: opportunities.map(serializeOpportunity),
     activities: activities.map(serializeActivity),
     sellers: sellers.map((u) => ({ idUser: u.idUser, fullName: u.fullName, email: u.email, accountStatus: u.accountStatus, role: 'vendedor' })),
-    objectives: await Promise.all(objectives.map((o) => serializeObjective(o))),
+    objectives: await Promise.all(objectives.map((o) => serializeObjective(o, { withProgress: false }))),
     monthlySales: monthlySales.map((v) => ({ month: MONTHS[Number(v.month.slice(5, 7)) - 1], period: v.month, sales: Number(v.total || 0) })),
     productLines: productLines.map((l) => ({ id: l.id, productLine: l.name, lineName: l.name, interactions: Number(oppsByLine[l.id] || 0) })),
   };

@@ -20,10 +20,11 @@ export const fetchDashboardData = async (twelveMonthsAgo) => {
     byLine,
   ] = await Promise.all([
     Company.findAll({
-      include: [{ model: Locality, as: 'locality', include: [{ model: Province, as: 'province' }] }],
+      attributes: ['id', 'legalName', 'tradeName', 'companyType', 'level', 'localityId', 'createdById', 'parentCompanyId'],
+      include: [{ model: Locality, as: 'locality', attributes: ['id', 'name'] }],
       order: [['legalName', 'ASC']],
     }),
-    Opportunity.findAll({ include: includeOpportunity, order: [['id', 'DESC']], limit: 1000 }),
+    Opportunity.findAll({ include: includeOpportunity, order: [['id', 'DESC']], limit: 200 }),
     Activity.findAll({
       include: [
         {
@@ -36,7 +37,7 @@ export const fetchDashboardData = async (twelveMonthsAgo) => {
         { model: User, as: 'author', attributes: ['idUser', 'fullName'] },
       ],
       order: [['occurredAt', 'DESC']],
-      limit: 500,
+      limit: 100,
     }),
     User.findAll({ where: { role: 'vendedor' }, order: [['fullName', 'ASC']] }),
     ProductLine.findAll({ order: [['name', 'ASC']] }),

@@ -78,7 +78,7 @@ export const env = {
   // ejecutan a mano (npm run db:migrate) después de un respaldo. Si quedan
   // pendientes, el servidor no arranca (evita correr código v2 sobre datos v1).
   autoMigrate: bool('DB_AUTO_MIGRATE', false),
-  bodyLimit: process.env.BODY_LIMIT || '15mb',
+  bodyLimit: process.env.BODY_LIMIT || '1mb',
   // Para que el rate limit vea la IP real detrás del proxy de Hostinger.
   trustProxy: process.env.TRUST_PROXY ?? (isProd ? '1' : 'false'),
 };
