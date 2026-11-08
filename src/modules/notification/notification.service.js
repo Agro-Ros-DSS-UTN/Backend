@@ -64,8 +64,9 @@ export const getNotificationSummary = async (userId, { admin = false } = {}) => 
     }),
     Promotion.findAll({
       where: {
+        // Vigentes que vencen en los próximos 7 días (la tabla no tiene columna de estado).
+        startDate: { [Op.lte]: today },
         endDate: { [Op.gte]: today, [Op.lte]: nextWeek },
-        status: 'Activa',
       },
       attributes: ['id', 'name', 'endDate'],
       limit: 5,

@@ -78,7 +78,9 @@ export const loginUser = async (body) => {
   await userRepository.save(user, { fields: ['passwordHash', 'lastLoginAt'] });
 
   const long = body?.rememberMe === true;
-  const full = await userRepository.findWithImageById(idUser);
+  // Sin la foto de perfil: puede pesar varios MB y en el celular, con mala señal,
+  // hacía que el login tardara o se cortara. El frontend la pide aparte.
+  const full = await userRepository.findById(user.idUser);
   return {
     message: 'Inicio de sesión exitoso',
     token: generateToken(user, { long }),
