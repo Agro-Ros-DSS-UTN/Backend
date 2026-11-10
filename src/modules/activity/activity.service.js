@@ -155,6 +155,7 @@ export const listActivities = async (query = {}, { admin, currentUserId }) => {
   const userId = !admin ? currentUserId : (query.userId ? String(query.userId) : undefined);
   const opportunityId = query.opportunityId ? toInt(query.opportunityId) : undefined;
   const serviceOrderId = query.serviceOrderId ? toInt(query.serviceOrderId) : undefined;
+  const companyId = query.companyId ? toInt(query.companyId) : undefined;
   const from = parseDate(query.from, 'from');
   const to = parseDate(query.to, 'to');
   const fromDate = from ? parseDateTime(from) : undefined;
