@@ -2,7 +2,7 @@ import { SERVICE_ORDER_STATUSES } from './serviceOrder.entity.js';
 import { EVALUATION_RESULTS } from './serviceEvaluation.entity.js';
 import * as serviceOrderRepository from './serviceOrder.repository.js';
 import { badRequest, conflict, notFound, toInt } from '../../shared/utils/http.js';
-import { dataUrl, number, parseDate, text, oneOf } from '../../shared/utils/validation.js';
+import { dataUrl, number, parseDate, text, oneOf, todayAR } from '../../shared/utils/validation.js';
 
 // Eficacia de un servicio según el resultado de la evaluación (para el tablero por
 // empresa y la respuesta de cada orden): sin insectos vivos = efectivo,
@@ -162,7 +162,7 @@ export const createServiceOrder = async (body = {}, { currentUserId }) => {
     if (!d.customerName) throw badRequest('Indicá la empresa o el nombre del cliente', { customerName: 'required' });
     const o = await serviceOrderRepository.create({
       ...d,
-      scheduledDate: d.scheduledDate || new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10),
+      scheduledDate: d.scheduledDate || todayAR(),
       workType: d.workType || 'Fumigación de Silo',
       status: d.status || 'Programada',
       createdById: currentUserId,
@@ -190,7 +190,7 @@ export const updateServiceOrder = async (id, body = {}) => {
     throw conflict(`Ya existe la orden N° ${d.orderNumber}`);
   }
   if (d.status === 'Completada' && !o.completedDate && d.completedDate === undefined) {
-    d.completedDate = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+    d.completedDate = todayAR();
   }
   await serviceOrderRepository.runTransaction(async (transaction) => {
     const technicianIds = await resolveReferences(body, d, transaction);
@@ -216,7 +216,7 @@ export const saveServiceOrderEvaluation = async (id, body = {}) => {
   const payload = {
     serviceOrderId: o.id,
     evaluationNumber,
-    evaluationDate: parseDate(body.evaluationDate, 'evaluationDate') || new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10),
+    evaluationDate: parseDate(body.evaluationDate, 'evaluationDate') || todayAR(),
     grainCondition: text(body.grainCondition, 'grainCondition', 5) || 'A',
     samplingPoint: text(body.samplingPoint, 'samplingPoint', 150) || 'Superficie',
     result: oneOf(body.result || 'Sin insectos vivos', EVALUATION_RESULTS, 'result'),

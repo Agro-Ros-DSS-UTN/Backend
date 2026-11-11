@@ -62,13 +62,26 @@ export const rateLimit = ({ windowMs, max, key = (req) => req.ip, message, skipS
   };
 };
 
-// Login: 5 intentos fallidos por usuario cada 15 min y 30 por IP.
-export const loginLimiterByUser = rateLimit({
+// Login (cada 15 min, solo cuentan los intentos fallidos):
+//  - 5 por usuario desde una misma IP: frena a quien adivina, sin bloquear al dueño
+//    de la cuenta que entra desde otro lugar (antes cualquiera podía dejar a un
+//    vendedor afuera 15 minutos con 5 intentos).
+//  - 20 por usuario en total: frena un ataque repartido entre muchas IP.
+//  - 30 por IP: frena a quien prueba muchos usuarios.
+// Misma normalización del usuario que el login (recorta espacios y mayúsculas).
+const loginUserKey = (req) => String(req.body?.idUser || req.body?.id || '').trim().toLowerCase();
+export const loginLimiterByUserIp = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  // Misma normalización que el login (recorta espacios), para que no se pueda esquivar el límite.
-  key: (req) => `u:${String(req.body?.idUser || req.body?.id || '').trim().toLowerCase()}`,
+  key: (req) => `ui:${loginUserKey(req)}|${req.ip}`,
   message: 'Demasiados intentos fallidos para este usuario. Probá de nuevo en 15 minutos.',
+  skipSuccessful: true,
+});
+export const loginLimiterByUser = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  key: (req) => `u:${loginUserKey(req)}`,
+  message: 'Hubo demasiados intentos fallidos con este usuario. Probá de nuevo en 15 minutos o avisá a la administración.',
   skipSuccessful: true,
 });
 export const loginLimiterByIp = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, skipSuccessful: true });

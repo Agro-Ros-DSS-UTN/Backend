@@ -22,7 +22,8 @@
     "companies:cleanup": "node scripts/cleanup-companies.mjs",
     "companies:cuit": "node scripts/fill-cuits.mjs",
     "companies:geocode": "node scripts/geocode-companies.mjs",
-    "test:security": "node scripts/security-tests.mjs"
+    "test:security": "node scripts/security-tests.mjs",
+    "test": "node test/setup-db.mjs && node --test test/*.test.mjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

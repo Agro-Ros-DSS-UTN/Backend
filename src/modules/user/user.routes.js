@@ -3,13 +3,13 @@
 // agregan los permisos por rol. Las reglas de propiedad están en el service.
 import { Router } from 'express';
 import { requireAdmin } from '../../shared/middlewares/auth.middleware.js';
-import { loginLimiterByIp, loginLimiterByUser } from '../../shared/middlewares/security.middleware.js';
+import { loginLimiterByIp, loginLimiterByUser, loginLimiterByUserIp } from '../../shared/middlewares/security.middleware.js';
 import * as users from './user.controller.js';
 
 const router = Router();
 const admin = requireAdmin;
 
-router.post('/auth/login', loginLimiterByIp, loginLimiterByUser, users.login);
+router.post('/auth/login', loginLimiterByIp, loginLimiterByUserIp, loginLimiterByUser, users.login);
 router.get('/auth/me', users.me);
 router.post('/auth/change-password', users.changePassword);
 router.post('/auth/refresh', users.refresh);

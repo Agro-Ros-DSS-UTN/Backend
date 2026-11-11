@@ -70,7 +70,43 @@ export const dataUrl = (value, field, maxMb = 6) => {
   if (!ALLOWED_MIME.test(s)) throw badRequest(`${field}: formato de archivo no permitido (imágenes, audio o PDF)`, { [field]: 'typeNotAllowed' });
   const bytes = Math.ceil(((s.length - s.indexOf(',') - 1) * 3) / 4);
   if (bytes > maxMb * 1024 * 1024) throw badRequest(`${field}: el archivo supera ${maxMb} MB`, { [field]: 'tooLarge' });
+  checkContent(s, field);
   return s;
+};
+
+// El tipo que declara el navegador se puede falsear: se mira también el contenido.
+// Imágenes y PDF tienen que empezar con su firma real; un audio no puede ser texto
+// (HTML, script). Un PDF con JavaScript adentro se rechaza.
+const startsWith = (buf, sig, offset = 0) => sig.every((b, i) => buf[offset + i] === b);
+const IMAGE_SIGNATURES = [
+  (b) => startsWith(b, [0x89, 0x50, 0x4e, 0x47]), // PNG
+  (b) => startsWith(b, [0xff, 0xd8, 0xff]), // JPEG
+  (b) => startsWith(b, [0x47, 0x49, 0x46, 0x38]), // GIF
+  (b) => startsWith(b, [0x52, 0x49, 0x46, 0x46]) && startsWith(b, [0x57, 0x45, 0x42, 0x50], 8), // WebP
+];
+const looksLikeText = (b) => {
+  const head = b.subarray(0, 64).toString('latin1').trimStart().toLowerCase();
+  return head.startsWith('<') || head.startsWith('{') || /^(<!doctype|<html|<svg|<script|<\?xml)/.test(head);
+};
+
+const checkContent = (s, field) => {
+  const mime = s.slice(5, s.indexOf(';')).toLowerCase();
+  const b64 = s.slice(s.indexOf(',') + 1);
+  const head = Buffer.from(b64.slice(0, 64), 'base64');
+  const reject = () => {
+    throw badRequest(`${field}: el contenido del archivo no corresponde a su tipo`, { [field]: 'contentMismatch' });
+  };
+  if (mime.startsWith('image/')) {
+    if (!IMAGE_SIGNATURES.some((ok) => ok(head))) reject();
+  } else if (mime === 'application/pdf') {
+    if (!startsWith(head, [0x25, 0x50, 0x44, 0x46])) reject(); // %PDF
+    const body = Buffer.from(b64, 'base64').toString('latin1');
+    if (/\/(JavaScript|JS)\b/.test(body)) {
+      throw badRequest(`${field}: el PDF tiene código JavaScript y no se acepta`, { [field]: 'pdfScript' });
+    }
+  } else if (mime.startsWith('audio/')) {
+    if (looksLikeText(head)) reject();
+  }
 };
 
 export const urlHttp = (value, field) => {
@@ -104,3 +140,6 @@ export const formatCuit = (cuit) => {
 
 export const escapeHtml = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Fecha de hoy en Argentina (AAAA-MM-DD), sin depender de la zona horaria del servidor.
+export const todayAR = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());

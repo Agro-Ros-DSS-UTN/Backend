@@ -34,13 +34,18 @@ app.use(compression({
   threshold: 1024,
   filter: (req, res) => !req.path.startsWith('/auth/') && compression.filter(req, res),
 }));
+// Los dos lectores de JSON se crean una sola vez: 10 MB para las rutas con archivos
+// (fotos, audios, firmas) y el límite general para el resto.
+const jsonUpload = express.json({ limit: '10mb' });
+const jsonDefault = express.json({ limit: env.bodyLimit });
 app.use((req, res, next) => {
   const isUploadRoute = req.path.startsWith('/activities') ||
     req.path.includes('/evaluations') ||
     req.path.startsWith('/service-orders') ||
-    req.path.includes('/profile-image');
-  const limit = isUploadRoute ? '10mb' : env.bodyLimit;
-  express.json({ limit })(req, res, next);
+    /^\/users\/[^/]+\/image\/?$/.test(req.path) ||
+    req.path.startsWith('/employees') ||
+    req.path.startsWith('/catalog') || req.path.startsWith('/products');
+  return (isUploadRoute ? jsonUpload : jsonDefault)(req, res, next);
 });
 app.use(apiLimiter);
 

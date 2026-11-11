@@ -1,11 +1,11 @@
 import * as promotionRepository from './promotion.repository.js';
 import { badRequest, notFound, toInt } from '../../shared/utils/http.js';
-import { parseDate, text } from '../../shared/utils/validation.js';
+import { parseDate, text, todayAR } from '../../shared/utils/validation.js';
 
 export const serializePromotion = (p) => {
   if (!p) return null;
   const j = typeof p.toJSON === 'function' ? p.toJSON() : p;
-  const today = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+  const today = todayAR();
   return {
     ...j,
     items: (j.items || []).map((i) => ({ id: i.id, name: i.name, type: i.type, productLine: i.productLine?.name ?? null })),
@@ -47,7 +47,7 @@ const saveItems = async (p, b, transaction) => {
 
 export const listPromotions = async (query = {}) => {
   const activeDate = query.active === '1'
-    ? new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10)
+    ? todayAR()
     : undefined;
   const promos = await promotionRepository.findAll({
     activeDate,

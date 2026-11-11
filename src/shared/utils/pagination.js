@@ -34,7 +34,8 @@ export const applyPagination = (queryOptions = {}, filters = {}) => {
 
   // 4. Si se solicitó paginación explícita, sanitizar valores
   const page = Math.max(1, parseInt(filters.page, 10) || 1);
-  const limit = Math.max(1, parseInt(filters.limit, 10) || 50);
+  // Tope por página: un pedido no puede traer más de 1000 registros de una vez.
+  const limit = Math.min(1000, Math.max(1, parseInt(filters.limit, 10) || 50));
 
   return {
     ...queryOptions,

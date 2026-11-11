@@ -2,7 +2,7 @@ import { COMPANY_LEVELS } from './company.entity.js';
 import { efficacyOf } from '../service-order/serviceOrder.service.js';
 import * as companyRepository from './company.repository.js';
 import { badRequest, forbidden, notFound, pick, toInt } from '../../shared/utils/http.js';
-import { isValidCuit, formatCuit, number, required, text, oneOf } from '../../shared/utils/validation.js';
+import { isValidCuit, formatCuit, number, required, text, oneOf, todayAR } from '../../shared/utils/validation.js';
 import { resolveLocality, serializeLocality } from '../locality/locality.service.js';
 import { serializeContact } from '../contact/contact.service.js';
 import { isLocalityInZone, zoneLocalityIds } from '../user/user.service.js';
@@ -285,7 +285,7 @@ export const restoreCompany = async (id) => {
 //   - period=all     → todo el historial
 //   - from / to      → fechas elegidas (AAAA-MM-DD; "to" vacío = hoy)
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const todayStr = () => new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+const todayStr = todayAR;
 
 const resolvePeriod = (query = {}) => {
   const to = todayStr();
