@@ -85,11 +85,15 @@ const activityData = (b) => {
 
 // Oportunidad de la actividad: id explícito, alta en línea, o (pantallas v1)
 // la oportunidad abierta más reciente de la empresa, creándola si no hay.
+// Un vendedor solo carga actividades en sus oportunidades (o en las que no tienen vendedor).
+const canUseOpportunity = ({ admin, currentUserId }, o) => admin || !o.userId || o.userId === currentUserId;
+
 const resolveOpportunity = async ({ admin, currentUserId }, body, transaction) => {
   const id = toInt(body.opportunityId);
   if (id && !Number.isNaN(id)) {
     const o = await activityRepository.findOpportunityById(id, { transaction });
     if (!o) throw badRequest('La oportunidad indicada no existe', { opportunityId: 'missing' });
+    if (!canUseOpportunity({ admin, currentUserId }, o)) throw forbidden('Esta oportunidad está asignada a otro vendedor');
     return { opportunity: o, created: false };
   }
   const newOppData = body.newOpportunity;
@@ -278,9 +282,9 @@ export const updateActivity = async (id, body = {}, auth) => {
   await activityRepository.runTransaction(async (transaction) => {
     const newOpp = toInt(body.opportunityId);
     if (newOpp && !Number.isNaN(newOpp) && newOpp !== a.opportunityId && !a.serviceOrderId) {
-      if (!(await activityRepository.findOpportunityById(newOpp, { transaction }))) {
-        throw badRequest('La oportunidad indicada no existe');
-      }
+      const target = await activityRepository.findOpportunityById(newOpp, { transaction });
+      if (!target) throw badRequest('La oportunidad indicada no existe');
+      if (!canUseOpportunity(auth, target)) throw forbidden('Esta oportunidad está asignada a otro vendedor');
       d.opportunityId = newOpp;
     }
     await activityRepository.update(a, d, { transaction });

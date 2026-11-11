@@ -17,6 +17,10 @@ export const serializeStop = (p) => {
   const fromLocality = own || fromCompany ? null : pair(j.company?.locality);
   const [lat, lon] = own ?? fromCompany ?? fromLocality ?? [null, null];
   const locationSource = own ? 'parada' : fromCompany ? 'empresa' : fromLocality ? 'localidad' : null;
+  // Contacto principal de la empresa (o el primero con teléfono).
+  const contacts = Array.isArray(j.company?.contacts) ? j.company.contacts : [];
+  const withPhone = contacts.filter((c) => c.phones?.length);
+  const mainContact = withPhone.find((c) => c.isPrimary) || withPhone[0] || contacts.find((c) => c.isPrimary) || contacts[0] || null;
   return {
     id: j.id,
     roadmapId: j.roadmapId,
@@ -26,6 +30,8 @@ export const serializeStop = (p) => {
     placeName: j.placeName,
     address: j.address ?? j.company?.address ?? null,
     locality: j.company?.locality?.name ?? null,
+    contactName: mainContact?.fullName ?? null,
+    contactPhone: mainContact?.phones?.[0]?.number ?? null,
     latitude: lat,
     longitude: lon,
     approximateCoordinates: locationSource === 'localidad',

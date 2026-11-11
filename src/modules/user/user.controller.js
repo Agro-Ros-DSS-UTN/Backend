@@ -17,8 +17,18 @@ export const me = asyncHandler(async (req, res) => {
 });
 
 export const changePassword = asyncHandler(async (req, res) => {
-  const result = await userService.changeUserPassword(req.user.idUser, req.body);
+  const result = await userService.changeUserPassword(req.user.idUser, req.body, { long: req.tokenPayload?.lng === 1 });
   res.json(result);
+});
+
+// Renueva la sesión mientras se usa: quien trabaja todos los días no vuelve a poner la contraseña.
+export const refresh = asyncHandler(async (req, res) => {
+  res.json(userService.refreshSession(req.user, { long: req.tokenPayload?.lng === 1 }));
+});
+
+// Cierra la sesión en todos los dispositivos (celular perdido, equipo compartido).
+export const logoutAll = asyncHandler(async (req, res) => {
+  res.json(await userService.logoutEverywhere(req.user.idUser));
 });
 
 // ── ABM de usuarios ──

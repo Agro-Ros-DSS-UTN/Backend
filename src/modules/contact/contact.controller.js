@@ -15,7 +15,10 @@ export const get = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const data = await contactService.createContact(req.body);
+  const data = await contactService.createContact(req.body, {
+    admin: isAdmin(req),
+    currentUserId: req.user?.idUser || req.user?.id,
+  });
   res.status(201).json({ message: 'Contacto creado', data });
 });
 

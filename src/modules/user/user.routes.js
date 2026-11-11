@@ -12,6 +12,8 @@ const admin = requireAdmin;
 router.post('/auth/login', loginLimiterByIp, loginLimiterByUser, users.login);
 router.get('/auth/me', users.me);
 router.post('/auth/change-password', users.changePassword);
+router.post('/auth/refresh', users.refresh);
+router.post('/auth/logout-all', users.logoutAll);
 
 router.get('/users', users.list);
 router.post('/users', admin, users.create);

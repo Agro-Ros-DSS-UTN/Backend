@@ -14,7 +14,8 @@ export const normalizeRole = (role) => {
 
 export const generateToken = (user, { long = false } = {}) =>
   jwt.sign(
-    { sub: user.idUser, role: normalizeRole(user.role), tv: user.tokenVersion || 0 },
+    // lng: sesión larga ("mantener la sesión iniciada"), para renovarla con la misma duración.
+    { sub: user.idUser, role: normalizeRole(user.role), tv: user.tokenVersion || 0, lng: long ? 1 : 0 },
     env.jwt.secret,
     { algorithm: 'HS256', expiresIn: long ? env.jwt.longExpiresIn : env.jwt.expiresIn, issuer: env.jwt.issuer, audience: env.jwt.audience }
   );
@@ -73,6 +74,7 @@ export const verifyToken = async (req, res, next) => {
     if (!user.active) throw unauthorized('La cuenta está desactivada');
     if ((payload.tv || 0) !== (user.tokenVersion || 0)) throw unauthorized('La sesión fue cerrada por un cambio de credenciales');
     req.user = user;
+    req.tokenPayload = payload;
     next();
   } catch (err) {
     next(err);

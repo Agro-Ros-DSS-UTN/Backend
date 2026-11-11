@@ -1,4 +1,4 @@
-import { sequelize, Roadmap, RoadmapStop, User, Company, Activity, Locality } from '../../shared/models/index.js';
+import { sequelize, Roadmap, RoadmapStop, User, Company, Activity, Locality, Contact, ContactPhone } from '../../shared/models/index.js';
 import { applyPagination } from '../../shared/utils/pagination.js';
 
 export const includeRoadmap = [
@@ -11,7 +11,14 @@ export const includeRoadmap = [
         as: 'company',
         attributes: ['id', 'legalName', 'address', 'latitude', 'longitude'],
         paranoid: false,
-        include: [{ model: Locality, as: 'locality', attributes: ['id', 'name', 'latitude', 'longitude'] }],
+        include: [
+          { model: Locality, as: 'locality', attributes: ['id', 'name', 'latitude', 'longitude'] },
+          // Contacto de la parada (para el botón de WhatsApp del vendedor). Consulta aparte para no multiplicar filas.
+          {
+            model: Contact, as: 'contacts', attributes: ['id', 'fullName', 'isPrimary', 'companyId'], separate: true,
+            include: [{ model: ContactPhone, as: 'phones', attributes: ['number'] }],
+          },
+        ],
       },
       { model: Activity, as: 'activity', attributes: ['id', 'contactType', 'occurredAt'] },
     ],

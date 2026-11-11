@@ -195,7 +195,12 @@ export const createCompany = async (body = {}, { admin, currentUserId }) => {
     const existingId = body.existingContactId;
     if (existingId) {
       contact = await companyRepository.findContactById(Number(existingId), { transaction });
-      if (contact) await companyRepository.updateContact(contact, { companyId: company.id }, { transaction });
+      if (!contact) throw badRequest('El contacto indicado no existe', { existingContactId: 'missing' });
+      // Solo se asocian contactos que todavía no tienen empresa: uno de otra empresa no se "mueve" desde acá.
+      if (contact.companyId) {
+        throw badRequest('Ese contacto ya pertenece a otra empresa. Elegí un contacto sin empresa o cargá uno nuevo.', { existingContactId: 'hasCompany' });
+      }
+      await companyRepository.updateContact(contact, { companyId: company.id }, { transaction });
     } else if (newContactData && (newContactData.fullName || newContactData.name)) {
       const name = text(newContactData.fullName || `${newContactData.name || ''} ${newContactData.surname || ''}`, 'fullName', 150);
       contact = await companyRepository.createContact({

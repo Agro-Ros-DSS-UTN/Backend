@@ -94,7 +94,7 @@ export const getCurrentUser = async (idUser) => {
   return serializeUser(u);
 };
 
-export const changeUserPassword = async (idUser, body) => {
+export const changeUserPassword = async (idUser, body, { long = false } = {}) => {
   const { currentPassword, newPassword } = body || {};
   required({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
   validatePassword(newPassword);
@@ -106,7 +106,20 @@ export const changeUserPassword = async (idUser, body) => {
   user.tokenVersion += 1; // cierra las sesiones abiertas en otros dispositivos
   await userRepository.save(user);
   invalidateUserCache(user.idUser);
-  return { message: 'Contraseña actualizada', token: generateToken(user) };
+  return { message: 'Contraseña actualizada', token: generateToken(user, { long }) };
+};
+
+// Token nuevo con la misma duración que el actual. verifyToken ya comprobó que el
+// usuario existe, está activo y que la sesión no fue cerrada.
+export const refreshSession = (user, { long = false } = {}) => ({ token: generateToken(user, { long }) });
+
+export const logoutEverywhere = async (idUser) => {
+  const user = await userRepository.findAuthById(idUser);
+  if (!user) throw notFound('Usuario');
+  user.tokenVersion += 1;
+  await userRepository.save(user, { fields: ['tokenVersion'] });
+  invalidateUserCache(idUser);
+  return { message: 'Se cerró la sesión en todos los dispositivos' };
 };
 
 // ── ABM de usuarios ──

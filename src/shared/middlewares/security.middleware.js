@@ -66,7 +66,8 @@ export const rateLimit = ({ windowMs, max, key = (req) => req.ip, message, skipS
 export const loginLimiterByUser = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  key: (req) => `u:${String(req.body?.idUser || req.body?.id || '').toLowerCase()}`,
+  // Misma normalización que el login (recorta espacios), para que no se pueda esquivar el límite.
+  key: (req) => `u:${String(req.body?.idUser || req.body?.id || '').trim().toLowerCase()}`,
   message: 'Demasiados intentos fallidos para este usuario. Probá de nuevo en 15 minutos.',
   skipSuccessful: true,
 });

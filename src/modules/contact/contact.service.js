@@ -110,12 +110,16 @@ export const getContact = async (idOrNationalId) => {
   return serializeContact(c);
 };
 
-export const createContact = async (body = {}) => {
+export const createContact = async (body = {}, auth = null) => {
   const d = contactData(body);
   if (!d.fullName && (body.name || body.surname)) d.fullName = text(`${body.name || ''} ${body.surname || ''}`, 'fullName', 150);
   required(d, ['fullName']);
   if (d.companyId && !(await contactRepository.findCompanyById(d.companyId))) {
     throw badRequest('La empresa indicada no existe', { companyId: 'missing' });
+  }
+  // Misma regla que al editar: el vendedor carga contactos en empresas suyas o de su zona.
+  if (auth && d.companyId && !(await canEditContact(auth, { companyId: d.companyId }))) {
+    throw forbidden('No tenés permiso para agregar contactos a esta empresa');
   }
   const id = await contactRepository.runTransaction(async (transaction) => {
     const c = await contactRepository.create(d, { transaction });

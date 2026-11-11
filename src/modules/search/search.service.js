@@ -4,11 +4,13 @@ import {
 } from '../../shared/models/index.js';
 
 export const globalSearch = async (query = '', { limit = 5, isSeller = false } = {}) => {
-  const q = String(query || '').trim();
-  if (!q || q.length < 2) {
+  const raw = String(query || '').trim();
+  if (!raw || raw.length < 2) {
     return { contacts: [], companies: [], deals: [], tasks: [], orders: [] };
   }
 
+  // % y _ son comodines de LIKE: se escapan para que "%%" no devuelva todo.
+  const q = raw.replace(/[\\%_]/g, (c) => `\\${c}`);
   const l = Math.min(20, Math.max(1, parseInt(limit, 10) || 5));
 
   const [companies, contacts, deals, tasks, orders] = await Promise.all([
