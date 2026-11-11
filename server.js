@@ -18,10 +18,26 @@ app.disable('x-powered-by');
 app.set('trust proxy', /^\d+$/.test(String(env.trustProxy)) ? Number(env.trustProxy) : env.trustProxy === 'true');
 
 app.use(securityHeaders);
+// Orígenes permitidos: los de FRONTEND_URL y su variante con o sin "www.".
+// Si alguien entra por www.portal… (enlace viejo, autocompletado de la tablet),
+// sin esto el navegador corta la respuesta y el login dice "No se pudo conectar".
+const allowedOrigins = new Set();
+for (const o of env.frontendOrigins) {
+  allowedOrigins.add(o.replace(/\/+$/, ''));
+  try {
+    const u = new URL(o);
+    const host = u.hostname.startsWith('www.') ? u.hostname.slice(4) : `www.${u.hostname}`;
+    if (u.hostname !== 'localhost' && !/^\d+(\.\d+){3}$/.test(u.hostname)) {
+      allowedOrigins.add(`${u.protocol}//${host}${u.port ? `:${u.port}` : ''}`);
+    }
+  } catch { /* origen mal escrito: queda solo el texto tal cual */ }
+}
+
 app.use(cors({
   origin(origin, cb) {
     // Sin Origin: llamadas del mismo servidor, curl o apps nativas (igual pasan por el token).
-    if (!origin || env.frontendOrigins.includes(origin)) return cb(null, true);
+    if (!origin || allowedOrigins.has(origin)) return cb(null, true);
+    console.warn(`[CORS] Origen rechazado: ${origin}`);
     return cb(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
